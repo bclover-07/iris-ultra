@@ -16,6 +16,15 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  String _ongoingTopic = 'Data Structures & STEM';
+  double _targetHoursPerDay = 2.5;
+  int _targetDays = 7;
+
+  bool _npuAccelerated = true;
+  bool _cameraPresenceActive = true;
+  bool _ambientSensorActive = true;
+  bool _smartNudgeActive = true;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +52,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(dashState.data),
+                const SizedBox(height: 16),
+                _buildOngoingTopicTargetCard(),
+                const SizedBox(height: 16),
+                _buildSystemTogglesPanel(),
                 const SizedBox(height: 16),
                 _buildNpuConsoleBanner(),
                 const SizedBox(height: 16),
@@ -456,6 +469,221 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.brutalBlack),
         ],
       ),
+    );
+  }
+
+  Widget _buildOngoingTopicTargetCard() {
+    return NeuCard(
+      backgroundColor: AppColors.popYellow,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.stars_rounded, color: AppColors.brutalBlack, size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    'ONGOING TOPIC TARGETS',
+                    style: GoogleFonts.fredoka(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: _showEditTopicDialog,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.brutalBlack, width: 2),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.edit_rounded, size: 12, color: AppColors.brutalBlack),
+                      const SizedBox(width: 4),
+                      Text('EDIT', style: GoogleFonts.fredoka(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.brutalBlack)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _ongoingTopic,
+            style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Target: $_targetDays Days Sprint · ${_targetHoursPerDay.toStringAsFixed(1)} Hours/Day',
+            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Sprint Progress', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: const LinearProgressIndicator(
+                        value: 0.65,
+                        minHeight: 10,
+                        backgroundColor: Colors.white,
+                        color: AppColors.popViolet,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Text('65% ON TRACK', style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditTopicDialog() {
+    final topicCtrl = TextEditingController(text: _ongoingTopic);
+    double tempHours = _targetHoursPerDay;
+    int tempDays = _targetDays;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          backgroundColor: AppColors.creamCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.brutalBlack, width: 3),
+          ),
+          title: Text(
+            'Edit Ongoing Topic Target',
+            style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('TOPIC / SUBJECT NAME', style: GoogleFonts.fredoka(fontSize: 11, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: topicCtrl,
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text('Target Days: $tempDays days', style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold)),
+              Slider(
+                value: tempDays.toDouble(),
+                min: 3,
+                max: 30,
+                divisions: 27,
+                activeColor: AppColors.popViolet,
+                onChanged: (v) => setDlgState(() => tempDays = v.round()),
+              ),
+              Text('Daily Hours: ${tempHours.toStringAsFixed(1)}h/day', style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold)),
+              Slider(
+                value: tempHours,
+                min: 1.0,
+                max: 8.0,
+                divisions: 14,
+                activeColor: AppColors.popYellow,
+                onChanged: (v) => setDlgState(() => tempHours = v),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Cancel', style: GoogleFonts.fredoka(color: Colors.black54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.popYellow,
+                foregroundColor: AppColors.brutalBlack,
+              ),
+              onPressed: () {
+                setState(() {
+                  _ongoingTopic = topicCtrl.text.trim().isNotEmpty ? topicCtrl.text.trim() : _ongoingTopic;
+                  _targetDays = tempDays;
+                  _targetHoursPerDay = tempHours;
+                });
+                Navigator.of(ctx).pop();
+              },
+              child: Text('SAVE TARGET', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSystemTogglesPanel() {
+    return NeuCard(
+      backgroundColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.tune_rounded, color: AppColors.brutalBlack, size: 20),
+              const SizedBox(width: 6),
+              Text(
+                'STUDENT SIGNAL TOGGLES',
+                style: GoogleFonts.fredoka(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildToggleRow('⚡ NPU Hardware Acceleration', 'LiteRT-LM on Hexagon silicon', _npuAccelerated, (v) => setState(() => _npuAccelerated = v)),
+          const Divider(height: 16),
+          _buildToggleRow('🎯 Camera Presence Tracker', 'Camera pose & verified focus', _cameraPresenceActive, (v) => setState(() => _cameraPresenceActive = v)),
+          const Divider(height: 16),
+          _buildToggleRow('🧘 Ambient Environment Sensor', 'Noise & decibel monitoring', _ambientSensorActive, (v) => setState(() => _ambientSensorActive = v)),
+          const Divider(height: 16),
+          _buildToggleRow('🔔 Smart Focus Haptic Nudge', 'Vibrate on distraction streak', _smartNudgeActive, (v) => setState(() => _smartNudgeActive = v)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleRow(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: GoogleFonts.fredoka(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brutalBlack)),
+              Text(subtitle, style: GoogleFonts.inter(fontSize: 11, color: Colors.black54)),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          activeColor: AppColors.popGreen,
+          activeTrackColor: AppColors.popGreen.withValues(alpha: 0.3),
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

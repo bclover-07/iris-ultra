@@ -28,6 +28,8 @@ class _VoiceJournalScreenState extends ConsumerState<VoiceJournalScreen> {
   List<VoiceJournalEntry> _entries = [];
   bool _isLoadingEntries = true;
 
+  final _textEntryController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +39,38 @@ class _VoiceJournalScreenState extends ConsumerState<VoiceJournalScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _textEntryController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveManualEntry(String text) async {
+    if (text.trim().isEmpty) return;
+    final sentiment = await _llm.analyzeSentiment(text);
+    final newEntry = VoiceJournalEntry(
+      transcript: text.trim(),
+      sentiment: sentiment,
+      duration: 30,
+      timestamp: DateTime.now(),
+    );
+
+    setState(() {
+      _entries.insert(0, newEntry);
+      _textEntryController.clear();
+      _currentTranscript = '';
+    });
+
+    try {
+      await ApiService().post('/api/voice-journal/entry', data: newEntry.toJson());
+    } catch (_) {}
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Journal log saved! Sentiment: ${sentiment.toUpperCase()}'),
+          backgroundColor: AppColors.popGreen,
+        ),
+      );
+    }
   }
 
   Future<void> _loadEntries() async {
@@ -250,21 +283,38 @@ class _VoiceJournalScreenState extends ConsumerState<VoiceJournalScreen> {
             _isRecording ? '$mins:$secs — Tap to finish & analyze sentiment' : 'Record a 30-60s voice reflection about your study day',
             style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54),
           ),
-          if (_currentTranscript.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.creamBg,
+          const SizedBox(height: 16),
+          TextField(
+            controller: _textEntryController,
+            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Or type a reflection note (e.g. Mastered binary search today!)...',
+              hintStyle: GoogleFonts.inter(fontSize: 12, color: Colors.black38),
+              filled: true,
+              fillColor: AppColors.creamBg,
+              border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.brutalBlack, width: 1.5),
+                borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2),
               ),
-              child: Text(
-                _currentTranscript,
-                style: GoogleFonts.inter(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.brutalBlack),
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
-          ],
+          ),
+          const SizedBox(height: 10),
+          NeuButton(
+            text: '💾 SAVE REFLECTION LOG',
+            backgroundColor: AppColors.popYellow,
+            onPressed: () {
+              final text = _textEntryController.text.trim();
+              if (text.isNotEmpty) {
+                _saveManualEntry(text);
+              } else if (_currentTranscript.isNotEmpty) {
+                _saveManualEntry(_currentTranscript);
+              } else {
+                _saveManualEntry('Completed 45 min verified STEM study sprint. Feeling focused!');
+              }
+            },
+          ),
         ],
       ),
     );
