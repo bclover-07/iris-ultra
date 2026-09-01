@@ -294,7 +294,7 @@ class _QuizCamoScreenState extends ConsumerState<QuizCamoScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.3),
+        color: color.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color, width: 1),
       ),
@@ -339,7 +339,7 @@ class _QuizCamoScreenState extends ConsumerState<QuizCamoScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: state.feedback!.contains('Correct') ? AppColors.popGreen.withOpacity(0.2) : AppColors.popCoral.withOpacity(0.2),
+                color: state.feedback!.contains('Correct') ? AppColors.popGreen.withValues(alpha: 0.2) : AppColors.popCoral.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: state.feedback!.contains('Correct') ? AppColors.popGreen : AppColors.popCoral,
@@ -381,7 +381,7 @@ class _QuizCamoScreenState extends ConsumerState<QuizCamoScreen> {
           padding: const EdgeInsets.only(bottom: 10),
           child: NeuCard(
             backgroundColor: isSelected
-                ? AppColors.popGreen.withOpacity(0.3)
+                ? AppColors.popGreen.withValues(alpha: 0.3)
                 : isWrong
                     ? Colors.grey.shade100
                     : Colors.white,

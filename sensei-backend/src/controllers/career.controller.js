@@ -37,32 +37,9 @@ Return JSON with:
   "resumeMatch": { "matchScore": number, "gaps": [string], "recommendations": [string] }
 }`;
 
-    let result;
-    try {
-      result = await callGeminiJSON(prompt, {
-        systemPrompt: 'You are a career advisor analyzing market trends and providing data-driven trajectory projections.'
-      });
-    } catch (_) {
-      result = {
-        marketInsights: {
-          marketDemand: 'Very High (Top 5% growth sector)',
-          averageSalary: '$145,000 - $190,000 / yr',
-          topHiringCompanies: targetCompanies?.length ? targetCompanies : ['Qualcomm', 'Google', 'NVIDIA', 'Apple'],
-          keySkillsInDemand: ['On-Device NPU Acceleration', 'Low-Bit Quantization', 'C++ / CUDA', 'Distributed Systems'],
-          growthForecast: '+28% projected demand over next 3 years'
-        },
-        trajectories: [
-          { type: 'Conservative', description: 'Core Systems / Edge Engineer', outcomes: { p10: '$110,000', p50: '$145,000', p90: '$180,000' } },
-          { type: 'Ambitious', description: 'Senior AI Hardware & NPU Specialist', outcomes: { p10: '$150,000', p50: '$195,000', p90: '$250,000' } },
-          { type: 'Wildcard', description: 'Autonomous AI Systems Founder / Lead Architect', outcomes: { p10: '$120,000', p50: '$220,000', p90: '$350,000+' } }
-        ],
-        resumeMatch: {
-          matchScore: 88,
-          gaps: ['Hardware profiling tools (Snapdragon Profiler)', 'Advanced Triton kernel development'],
-          recommendations: ['Build on-device Gemma LiteRT project', 'Publish open-source benchmark']
-        }
-      };
-    }
+    const result = await callGeminiJSON(prompt, {
+      systemPrompt: 'You are a career advisor analyzing market trends and providing data-driven trajectory projections.'
+    });
 
     const simulation = await CareerSimulation.create({
       studentId: req.user.userId,
@@ -95,20 +72,9 @@ export const getMarketData = async (req, res) => {
     const prompt = `Provide current market data for the field: ${field || 'Software Engineering / AI'}
 Return JSON: { "marketDemand": string, "averageSalary": string, "topHiringCompanies": [string], "keySkillsInDemand": [string], "growthForecast": string }`;
 
-    let data;
-    try {
-      data = await callGeminiJSON(prompt, {
-        systemPrompt: 'You are a labor market analyst providing concise, data-driven market insights.'
-      });
-    } catch (_) {
-      data = {
-        marketDemand: 'Critical Shortage / High Demand',
-        averageSalary: '$155,000',
-        topHiringCompanies: ['Qualcomm', 'Google DeepMind', 'Apple', 'Meta AI'],
-        keySkillsInDemand: ['NPU Execution', 'LLM Distillation', 'DSP Optimization', 'Rust / C++'],
-        growthForecast: '+32% year-over-year growth in Edge AI'
-      };
-    }
+    const data = await callGeminiJSON(prompt, {
+      systemPrompt: 'You are a labor market analyst providing concise, data-driven market insights.'
+    });
 
     res.json(data);
   } catch (error) {

@@ -219,7 +219,7 @@ class _VoiceJournalScreenState extends ConsumerState<VoiceJournalScreen> {
     final secs = (_recordSeconds % 60).toString().padLeft(2, '0');
 
     return NeuCard(
-      backgroundColor: _isRecording ? AppColors.popCoral.withOpacity(0.12) : Colors.white,
+      backgroundColor: _isRecording ? AppColors.popCoral.withValues(alpha: 0.12) : Colors.white,
       child: Column(
         children: [
           Row(

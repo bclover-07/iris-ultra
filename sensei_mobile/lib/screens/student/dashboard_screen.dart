@@ -7,7 +7,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../providers/student_dashboard_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/neubrutalist_widgets.dart';
-import '../../theme/animations.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -159,7 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.npuTeal.withOpacity(0.2),
+                color: AppColors.npuTeal.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.npuTeal, width: 2),
               ),
@@ -370,7 +369,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ticksTextStyle: const TextStyle(color: Colors.transparent),
                 dataSets: [
                   RadarDataSet(
-                    fillColor: AppColors.popViolet.withOpacity(0.25),
+                    fillColor: AppColors.popViolet.withValues(alpha: 0.25),
                     borderColor: AppColors.popViolet,
                     borderWidth: 2.5,
                     entryRadius: 4,
@@ -432,7 +431,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.brutalBlack, width: 2),
             ),

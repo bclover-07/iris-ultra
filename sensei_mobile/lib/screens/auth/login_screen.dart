@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../theme/marketing_widgets.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/neubrutalist_widgets.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -14,9 +15,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  String _selectedRole = 'student';
+  final _emailController = TextEditingController(text: 'alex.rivera@sensei.ai');
+  final _passwordController = TextEditingController(text: 'password123');
 
   @override
   void dispose() {
@@ -27,28 +27,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _handleLogin() async {
     final success = await ref.read(authProvider.notifier).login(
-      _emailController.text,
+      _emailController.text.trim(),
       _passwordController.text,
-      _selectedRole,
     );
 
     if (success && mounted) {
-      if (_selectedRole == 'admin') {
-        context.go('/admin');
-      } else if (_selectedRole == 'teacher') {
-        context.go('/teacher');
-      } else {
-        context.go('/student');
-      }
+      context.go('/student');
     }
-  }
-
-  void _loadDemo(String role, String email, String password) {
-    setState(() {
-      _selectedRole = role;
-      _emailController.text = email;
-      _passwordController.text = password;
-    });
   }
 
   @override
@@ -56,198 +41,197 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      body: PolkaDotBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: AppColors.creamBg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top Back / Brand
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [MarketingColors.purple, MarketingColors.purpleDark],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.psychology, color: Colors.white, size: 20),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'SENSEI',
-                        style: GoogleFonts.cinzel(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                          letterSpacing: 2,
-                          color: MarketingColors.navy,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-
-                  Text(
-                    'Welcome Back',
-                    style: GoogleFonts.raleway(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: MarketingColors.navy,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Select your persona to continue.',
-                    style: GoogleFonts.raleway(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Roles via Sticky Notes
-                  SizedBox(
-                    height: 120,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _buildRoleNote('student', 'STUDENT', MarketingColors.noteLavender, -2),
-                        const SizedBox(width: 16),
-                        _buildRoleNote('teacher', 'FACULTY', MarketingColors.noteBlue, 1.5),
-                        const SizedBox(width: 16),
-                        _buildRoleNote('admin', 'ADMIN', MarketingColors.noteGreen, -1),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Login Form
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _emailController,
-                          decoration: InputDecoration(
-                            labelText: 'Email Address',
-                            labelStyle: GoogleFonts.raleway(fontWeight: FontWeight.bold),
-                            filled: true,
-                            fillColor: MarketingColors.bgPage,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            labelStyle: GoogleFonts.raleway(fontWeight: FontWeight.bold),
-                            filled: true,
-                            fillColor: MarketingColors.bgPage,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: MarketingButton(
-                            label: authState.isLoading ? 'SIGNING IN...' : 'SIGN IN',
-                            onTap: authState.isLoading ? () {} : _handleLogin,
-                          ),
-                        ),
-                        if (authState.error != null) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            authState.error!,
-                            style: GoogleFonts.raleway(color: Colors.red, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
+                  GestureDetector(
+                    onTap: () => context.go('/'),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.brutalBlack, width: 2),
+                        boxShadow: const [
+                          BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
                         ],
-                      ],
+                      ),
+                      child: const Icon(Icons.arrow_back_rounded, color: AppColors.brutalBlack, size: 20),
                     ),
                   ),
-
-                  const SizedBox(height: 40),
-                  Text(
-                    'Demo Quick Access:',
-                    style: GoogleFonts.raleway(fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildDemoBtn('Student', 'aarav.sharma.cse@sensei.edu', 'student123', 'student'),
-                      _buildDemoBtn('Faculty', 'teacher.cse@sensei.edu', 'teacher123', 'teacher'),
-                      _buildDemoBtn('Admin', 'shivam77@gmail.com', '9082249120', 'admin'),
-                    ],
+                  NeuBadge(
+                    label: 'STUDENT PORTAL',
+                    backgroundColor: AppColors.popYellow,
                   ),
                 ],
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+              const SizedBox(height: 28),
 
-  Widget _buildRoleNote(String id, String label, Color color, double rotation) {
-    final isSelected = _selectedRole == id;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedRole = id),
-      child: AnimatedScale(
-        scale: isSelected ? 1.05 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: Opacity(
-          opacity: isSelected ? 1.0 : 0.6,
-          child: StickyNote(
-            color: color,
-            rotateDegrees: rotation,
-            width: 110,
-            child: Center(
-              child: Text(
-                label,
-                style: GoogleFonts.raleway(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                  color: MarketingColors.navy,
+              // Title Card
+              NeuCard(
+                backgroundColor: Colors.white,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome Back! ⚡',
+                      style: GoogleFonts.fredoka(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brutalBlack,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Sign in to access your verified 5-signal radar, on-device Gemma mentor, and multiplayer 3D campus.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: Colors.black54,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Email Field
+                    Text(
+                      'STUDENT EMAIL',
+                      style: GoogleFonts.fredoka(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brutalBlack,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.creamBg,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.brutalBlack, width: 2),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: TextField(
+                        controller: _emailController,
+                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'student@sensei.ai',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password Field
+                    Text(
+                      'PASSWORD',
+                      style: GoogleFonts.fredoka(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brutalBlack,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.creamBg,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.brutalBlack, width: 2),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: '••••••••',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    if (authState.error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.popCoral.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.popCoral, width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: AppColors.popCoral, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                authState.error!,
+                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.popCoral, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    NeuButton(
+                      text: authState.isLoading ? 'SIGNING IN...' : 'LOGIN TO SENSEI 🚀',
+                      backgroundColor: AppColors.popYellow,
+                      isLoading: authState.isLoading,
+                      onPressed: authState.isLoading ? null : _handleLogin,
+                    ),
+                    const SizedBox(height: 12),
+
+                    Center(
+                      child: GestureDetector(
+                        onTap: () => context.go('/register'),
+                        child: Text(
+                          "Don't have an account? Create one",
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.brutalBlack,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+              const SizedBox(height: 20),
+
+              // Demo Account Quick Fill
+              NeuCard(
+                backgroundColor: AppColors.popViolet.withValues(alpha: 0.15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DEMO STUDENT PROFILE',
+                      style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Alex Rivera • CSE 3rd Year • iQOO 15 (Snapdragon 8 Elite)',
+                      style: GoogleFonts.inter(fontSize: 11, color: Colors.black87),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDemoBtn(String label, String email, String password, String role) {
-    return ActionChip(
-      label: Text(label, style: GoogleFonts.raleway(fontWeight: FontWeight.bold)),
-      backgroundColor: MarketingColors.bgPage,
-      onPressed: () => _loadDemo(role, email, password),
     );
   }
 }

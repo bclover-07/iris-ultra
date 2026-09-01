@@ -115,11 +115,11 @@ class PracticeAreaScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.brutalBlack, width: 2.5),
                   boxShadow: [
-                    BoxShadow(color: color.withOpacity(0.3), offset: const Offset(3, 3), blurRadius: 0),
+                    BoxShadow(color: color.withValues(alpha: 0.3), offset: const Offset(3, 3), blurRadius: 0),
                   ],
                 ),
                 child: Icon(icon, color: AppColors.brutalBlack, size: 28),

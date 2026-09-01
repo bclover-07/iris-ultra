@@ -209,7 +209,7 @@ class NpuConsoleScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.brutalBlack, width: 2),
         ),
@@ -235,7 +235,7 @@ class NpuConsoleScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.popGreen.withOpacity(0.2),
+              color: AppColors.popGreen.withValues(alpha: 0.2),
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.brutalBlack, width: 2),
             ),

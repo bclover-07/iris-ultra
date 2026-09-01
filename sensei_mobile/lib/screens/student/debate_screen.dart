@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/neubrutalist_widgets.dart';
 import '../../theme/app_colors.dart';
-import '../../config/env.dart';
 import '../../services/api_service.dart';
 
 class DebateScreen extends ConsumerStatefulWidget {
@@ -226,7 +225,7 @@ class _DebateScreenState extends ConsumerState<DebateScreen> {
                         ],
                       ),
                     ),
-                  )).toList(),
+                  )),
                 ],
               ),
             ),

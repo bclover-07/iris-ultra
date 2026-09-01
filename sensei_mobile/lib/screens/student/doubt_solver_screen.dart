@@ -299,7 +299,7 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
             child: Stack(
               children: [
                 Center(
-                  child: Icon(Icons.document_scanner_rounded, size: 48, color: Colors.white.withOpacity(0.3)),
+                  child: Icon(Icons.document_scanner_rounded, size: 48, color: Colors.white.withValues(alpha: 0.3)),
                 ),
                 Positioned(
                   top: 16,
@@ -346,7 +346,7 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.85),
+        color: color.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white, width: 1),
       ),
@@ -413,7 +413,7 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.popGreen.withOpacity(0.15),
+              color: AppColors.popGreen.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.popGreen, width: 2),
             ),
