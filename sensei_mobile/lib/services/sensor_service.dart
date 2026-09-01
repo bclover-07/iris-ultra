@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:sensors_plus/sensors_plus.dart';
 import 'npu_event_service.dart';
 
 class AmbientEnvironmentScore {

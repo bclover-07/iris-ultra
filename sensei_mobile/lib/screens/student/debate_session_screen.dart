@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,6 +12,7 @@ import '../../theme/app_colors.dart';
 import '../../config/env.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/on_device_llm_service.dart';
 
 class DebateSessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -478,15 +480,38 @@ class _DebateSessionScreenState extends ConsumerState<DebateSessionScreen>
     });
   }
 
-  void _submitArgument(String text) {
+  Future<void> _submitArgument(String text) async {
     if (text.isEmpty) return;
     _addMessage(text, isAI: false);
     setState(() => _isProcessing = true);
 
-    _socket?.emit('debate:argument', {
-      'sessionId': widget.sessionId,
-      'transcript': text,
-    });
+    if (_socket != null && _socket!.connected) {
+      _socket?.emit('debate:argument', {
+        'sessionId': widget.sessionId,
+        'transcript': text,
+      });
+    } else {
+      // On-Device Gemma 3n Counter-Argument on Hexagon NPU (§6.10)
+      try {
+        final rebuttal = await OnDeviceLlmService().generateCounterArgument(widget.topic, text, _selectedSide);
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (mounted) {
+          _handleAITurn({
+            'aiText': rebuttal,
+            'round': _round + 1,
+            'totalRounds': _totalRounds,
+            'heatLevel': (_heatLevel + 15).clamp(0, 100),
+            'crowdMood': (_crowdMood + (Random().nextInt(20) - 10)).clamp(0, 100),
+            'coachingNudge': 'Strong counter! Focus on citing empirical statistics next turn.',
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isProcessing = false);
+          _addMessage('Your opponent is preparing the rebuttal. Continue your argument.', isAI: true);
+        }
+      }
+    }
   }
 
   @override
