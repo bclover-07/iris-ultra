@@ -1,4 +1,4 @@
-import { callHuggingFace } from './huggingface.service.js';
+import { callGemini } from './gemini.service.js';
 
 const NPC_PERSONALITIES = [
   { name: 'Ethan', trait: 'The Joker. Friendly and hilarious.', avatar: 'https://i.pravatar.cc/150?u=Ethan', color: '#FFD93D', behavior: 'joker' },
