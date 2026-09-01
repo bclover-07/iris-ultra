@@ -337,10 +337,14 @@ class _StudyPlanScreenState extends ConsumerState<StudyPlanScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'ACTIVE PLAN: ${plan.title.toUpperCase()}',
-              style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+            Expanded(
+              child: Text(
+                'ACTIVE PLAN: ${plan.title.toUpperCase()}',
+                style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            const SizedBox(width: 8),
             NeuBadge(
               label: '${plan.progressPercent.round()}% COMPLETED',
               backgroundColor: AppColors.popGreen,

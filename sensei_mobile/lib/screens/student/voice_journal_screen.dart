@@ -84,6 +84,7 @@ class _VoiceJournalScreenState extends ConsumerState<VoiceJournalScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       // Use defaults if offline
       setState(() {
         _entries = [

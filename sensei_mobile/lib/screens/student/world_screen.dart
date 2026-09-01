@@ -58,6 +58,7 @@ class _WorldScreenState extends ConsumerState<WorldScreen> {
   }
 
   void _useDefaultRooms() {
+    if (!mounted) return;
     setState(() {
       _rooms = [
         {

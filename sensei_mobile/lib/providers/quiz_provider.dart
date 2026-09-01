@@ -96,14 +96,12 @@ class QuizNotifier extends StateNotifier<QuizState> {
   }
 
   void nextQuestion() {
-    if (state.currentIndex + 1 < state.questions.length) {
-      state = state.copyWith(
-        currentIndex: state.currentIndex + 1,
-        isAnswerLocked: false,
-        feedback: null,
-        detectedGesture: null,
-      );
-    }
+    state = state.copyWith(
+      currentIndex: state.currentIndex + 1,
+      isAnswerLocked: false,
+      feedback: null,
+      detectedGesture: null,
+    );
   }
 
   void setTopic(String topic) {
