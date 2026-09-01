@@ -4,7 +4,6 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
-import '../utils/socket_namespace.dart';
 
 class AuthState {
   final User? user;
@@ -43,19 +42,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier() : super(const AuthState());
 
-  Future<bool> login(String email, String password, String expectedRole) async {
+  Future<bool> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final data = await _authService.login(email, password);
       final user = User.fromJson(data['user']);
-
-      if (user.role != expectedRole) {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Account is registered as "${user.role}", not "$expectedRole".',
-        );
-        return false;
-      }
 
       state = AuthState(
         user: user,
@@ -65,7 +56,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
 
       SocketService().connect(
-        namespace: socketNamespaceForRole(user.role),
+        namespace: '/student',
         userId: user.id,
       );
 
@@ -114,7 +105,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
 
       SocketService().connect(
-        namespace: socketNamespaceForRole(user.role),
+        namespace: '/student',
         userId: user.id,
       );
     } catch (_) {

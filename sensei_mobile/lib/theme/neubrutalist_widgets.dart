@@ -1,106 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import 'animations.dart';
 
-class BrutalistCard extends StatelessWidget {
+/// 1. NeuCard — Round-edged Neu-brutalist Card with Hard Box-Shadow
+class NeuCard extends StatefulWidget {
   final Widget child;
   final Color? backgroundColor;
   final Color borderColor;
   final double borderWidth;
   final double shadowOffset;
-  final EdgeInsetsGeometry padding;
   final BorderRadius? borderRadius;
+  final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
 
-  const BrutalistCard({
+  const NeuCard({
     super.key,
     required this.child,
     this.backgroundColor,
     this.borderColor = AppColors.brutalBlack,
-    this.borderWidth = 4,
-    this.shadowOffset = 8,
-    this.padding = const EdgeInsets.all(16),
+    this.borderWidth = 3.0,
+    this.shadowOffset = 5.0,
     this.borderRadius,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveBorder = isDark ? Colors.white : borderColor;
-    final effectiveBg = backgroundColor ?? (isDark ? AppColors.darkCard : Colors.white);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: padding,
-        decoration: BoxDecoration(
-          color: effectiveBg,
-          borderRadius: borderRadius ?? BorderRadius.zero,
-          border: Border.all(color: effectiveBorder, width: borderWidth),
-          boxShadow: [
-            BoxShadow(
-              color: effectiveBorder,
-              offset: Offset(shadowOffset, shadowOffset),
-              blurRadius: 0,
-            ),
-          ],
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-class ComicCard extends StatefulWidget {
-  final Widget child;
-  final Color? backgroundColor;
-  final EdgeInsetsGeometry padding;
-  final VoidCallback? onTap;
-
-  const ComicCard({
-    super.key,
-    required this.child,
-    this.backgroundColor,
     this.padding = const EdgeInsets.all(16),
     this.onTap,
   });
 
   @override
-  State<ComicCard> createState() => _ComicCardState();
+  State<NeuCard> createState() => _NeuCardState();
 }
 
-class _ComicCardState extends State<ComicCard> {
+class _NeuCardState extends State<NeuCard> {
   bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? Colors.white : AppColors.brutalBlack;
-    final bg = widget.backgroundColor ?? (isDark ? AppColors.darkCard : Colors.white);
+    final effectiveRadius = widget.borderRadius ?? BorderRadius.circular(20);
+    final bg = widget.backgroundColor ?? AppColors.creamCard;
+    final hasTap = widget.onTap != null;
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap?.call();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTapDown: hasTap ? (_) => setState(() => _isPressed = true) : null,
+      onTapUp: hasTap
+          ? (_) {
+              setState(() => _isPressed = false);
+              widget.onTap?.call();
+            }
+          : null,
+      onTapCancel: hasTap ? () => setState(() => _isPressed = false) : null,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
+        duration: NeuAnimations.fast,
+        curve: Curves.easeOutQuad,
         padding: widget.padding,
-        transform: _isPressed
-            ? Matrix4.translationValues(2, 2, 0)
-            : Matrix4.translationValues(0, 0, 0),
+        transform: Matrix4.translationValues(
+          _isPressed ? 2.5 : 0,
+          _isPressed ? 2.5 : 0,
+          0,
+        ),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 4),
+          borderRadius: effectiveRadius,
+          border: Border.all(color: widget.borderColor, width: widget.borderWidth),
           boxShadow: [
             BoxShadow(
-              color: borderColor,
-              offset: _isPressed ? const Offset(1, 1) : const Offset(6, 6),
+              color: widget.borderColor,
+              offset: _isPressed
+                  ? const Offset(1.5, 1.5)
+                  : Offset(widget.shadowOffset, widget.shadowOffset),
               blurRadius: 0,
             ),
           ],
@@ -111,390 +77,188 @@ class _ComicCardState extends State<ComicCard> {
   }
 }
 
-class StickyNote extends StatelessWidget {
-  final Widget child;
-  final Color color;
-  final double rotation;
-  final EdgeInsetsGeometry padding;
-
-  const StickyNote({
-    super.key,
-    required this.child,
-    this.color = const Color(0xFFFFE93A),
-    this.rotation = -1.5,
-    this.padding = const EdgeInsets.all(16),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: rotation * 3.14159 / 180,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.08), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  offset: const Offset(4, 5),
-                  blurRadius: 0,
-                ),
-              ],
-            ),
-            child: child,
-          ),
-          Positioned(
-            top: -10,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                width: 48,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD2BE8C).withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(3),
-                  border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class PowBurst extends StatelessWidget {
+/// 2. NeuButton — Bouncy Neu-brutalist Action Button with Round Edges
+class NeuButton extends StatefulWidget {
   final String text;
+  final VoidCallback? onPressed;
   final Color backgroundColor;
   final Color textColor;
-  final double rotation;
-
-  const PowBurst({
-    super.key,
-    required this.text,
-    this.backgroundColor = AppColors.gold,
-    this.textColor = Colors.black,
-    this.rotation = -3,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: rotation * 3.14159 / 180,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          border: Border.all(color: Colors.black, width: 4),
-          boxShadow: const [
-            BoxShadow(color: Colors.black, offset: Offset(6, 6), blurRadius: 0),
-          ],
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
-            color: textColor,
-            letterSpacing: 2,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ComicButton extends StatefulWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  final Color? backgroundColor;
-  final Color? textColor;
   final IconData? icon;
   final bool isLoading;
+  final double height;
+  final double? width;
+  final BorderRadius? borderRadius;
 
-  const ComicButton({
+  const NeuButton({
     super.key,
-    required this.label,
-    this.onPressed,
-    this.backgroundColor,
-    this.textColor,
+    required this.text,
+    required this.onPressed,
+    this.backgroundColor = AppColors.popYellow,
+    this.textColor = AppColors.brutalBlack,
     this.icon,
     this.isLoading = false,
+    this.height = 54,
+    this.width,
+    this.borderRadius,
   });
 
   @override
-  State<ComicButton> createState() => _ComicButtonState();
+  State<NeuButton> createState() => _NeuButtonState();
 }
 
-class _ComicButtonState extends State<ComicButton> {
+class _NeuButtonState extends State<NeuButton> {
   bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? Colors.white : AppColors.brutalBlack;
-    final bg = widget.backgroundColor ?? AppColors.gold;
-    final fg = widget.textColor ?? AppColors.brutalBlack;
+    final effectiveRadius = widget.borderRadius ?? BorderRadius.circular(16);
+    final enabled = widget.onPressed != null && !widget.isLoading;
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onPressed?.call();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTapDown: enabled ? (_) => setState(() => _isPressed = true) : null,
+      onTapUp: enabled
+          ? (_) {
+              setState(() => _isPressed = false);
+              widget.onPressed?.call();
+            }
+          : null,
+      onTapCancel: enabled ? () => setState(() => _isPressed = false) : null,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        transform: _isPressed
-            ? Matrix4.translationValues(2, 2, 0)
-            : Matrix4.translationValues(0, 0, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        duration: NeuAnimations.fast,
+        curve: Curves.easeOutQuad,
+        height: widget.height,
+        width: widget.width,
+        transform: Matrix4.translationValues(
+          _isPressed ? 3 : 0,
+          _isPressed ? 3 : 0,
+          0,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: widget.isLoading ? bg.withValues(alpha: 0.5) : bg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 3),
+          color: enabled ? widget.backgroundColor : Colors.grey.shade300,
+          borderRadius: effectiveRadius,
+          border: Border.all(color: AppColors.brutalBlack, width: 3),
           boxShadow: [
             BoxShadow(
-              color: borderColor,
-              offset: _isPressed ? Offset.zero : const Offset(4, 4),
+              color: AppColors.brutalBlack,
+              offset: _isPressed ? const Offset(1, 1) : const Offset(4, 4),
               blurRadius: 0,
             ),
           ],
         ),
-        child: widget.isLoading
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(3, (i) => _buildDot(i)),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (widget.icon != null) ...[
-                    Icon(widget.icon, color: fg, size: 18),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    widget.label.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 12,
-                      letterSpacing: 1,
-                      color: fg,
+        child: Center(
+          child: widget.isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: AppColors.brutalBlack,
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.icon != null) ...[
+                      Icon(widget.icon, color: widget.textColor, size: 20),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      widget.text.toUpperCase(),
+                      style: GoogleFonts.fredoka(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: widget.textColor,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
-  Widget _buildDot(int index) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 600 + index * 150),
-      builder: (_, val, child) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 3),
-        child: Transform.translate(
-          offset: Offset(0, -6 * (1 - (2 * val - 1).abs())),
-          child: child,
-        ),
-      ),
-      child: Container(
-        width: 7,
-        height: 7,
-        decoration: const BoxDecoration(
-          color: Colors.black54,
-          shape: BoxShape.circle,
+                  ],
+                ),
         ),
       ),
     );
   }
 }
 
-class StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color iconColor;
-  final Color backgroundColor;
-  final Color borderColor;
-  final VoidCallback? onTap;
+/// 3. NeuTextField — Round-edged Form Input with Neu-brutalist styling
+class NeuTextField extends StatelessWidget {
+  final TextEditingController? controller;
+  final String hintText;
+  final String? labelText;
+  final bool obscureText;
+  final IconData? prefixIcon;
+  final Widget? suffixIcon;
+  final ValueChanged<String>? onChanged;
+  final int maxLines;
+  final TextInputType keyboardType;
 
-  const StatCard({
+  const NeuTextField({
     super.key,
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-    required this.backgroundColor,
-    required this.borderColor,
-    this.onTap,
+    this.controller,
+    required this.hintText,
+    this.labelText,
+    this.obscureText = false,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.onChanged,
+    this.maxLines = 1,
+    this.keyboardType = TextInputType.text,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BrutalistCard(
-      backgroundColor: backgroundColor,
-      borderColor: borderColor,
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: borderColor, width: 2),
-                ),
-                child: Icon(icon, color: iconColor, size: 18),
-              ),
-              Expanded(
-                child: Text(
-                  label.toUpperCase(),
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                    color: iconColor.withValues(alpha: 0.8),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  height: 1,
-                  color: AppColors.brutalBlack,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class BrutalistProgressBar extends StatelessWidget {
-  final double percentage;
-  final Color fillColor;
-  final double height;
-
-  const BrutalistProgressBar({
-    super.key,
-    required this.percentage,
-    required this.fillColor,
-    this.height = 28,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? Colors.white : AppColors.brutalBlack;
-    final pct = percentage.clamp(0, 100);
-
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 3),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Row(
-          children: [
-            Flexible(
-              flex: pct.toInt(),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: fillColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            if (pct < 100)
-              Flexible(
-                flex: (100 - pct).toInt().clamp(1, 100),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    backgroundBlendMode: BlendMode.multiply,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SpeechBubble extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-
-  const SpeechBubble({
-    super.key,
-    required this.child,
-    this.padding = const EdgeInsets.all(12),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final borderColor = isDark ? Colors.white : AppColors.brutalBlack;
-
-    return Stack(
-      clipBehavior: Clip.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (labelText != null) ...[
+          Text(
+            labelText!.toUpperCase(),
+            style: GoogleFonts.fredoka(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: AppColors.brutalBlack,
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
         Container(
-          padding: padding,
           decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor, width: 3),
-            boxShadow: [
-              BoxShadow(color: borderColor, offset: const Offset(4, 4), blurRadius: 0),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.brutalBlack, width: 2.8),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.brutalBlack,
+                offset: Offset(3.5, 3.5),
+                blurRadius: 0,
+              ),
             ],
           ),
-          child: child,
-        ),
-        Positioned(
-          bottom: -14,
-          left: 24,
-          child: CustomPaint(
-            size: const Size(24, 16),
-            painter: _BubbleTailPainter(
-              fillColor: isDark ? AppColors.darkCard : Colors.white,
-              borderColor: borderColor,
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            onChanged: onChanged,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.brutalBlack,
+            ),
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: GoogleFonts.inter(
+                color: Colors.black38,
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: prefixIcon != null
+                  ? Icon(prefixIcon, color: AppColors.brutalBlack, size: 20)
+                  : null,
+              suffixIcon: suffixIcon,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             ),
           ),
         ),
@@ -503,124 +267,115 @@ class SpeechBubble extends StatelessWidget {
   }
 }
 
-class _BubbleTailPainter extends CustomPainter {
-  final Color fillColor;
-  final Color borderColor;
-
-  _BubbleTailPainter({required this.fillColor, required this.borderColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width / 2, size.height)
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path, Paint()..color = borderColor);
-
-    final innerPath = Path()
-      ..moveTo(3, 0)
-      ..lineTo(size.width / 2, size.height - 4)
-      ..lineTo(size.width - 3, 0)
-      ..close();
-
-    canvas.drawPath(innerPath, Paint()..color = fillColor);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class LoadingSkeleton extends StatelessWidget {
-  final double width;
-  final double height;
-  final BorderRadius? borderRadius;
-
-  const LoadingSkeleton({
-    super.key,
-    this.width = double.infinity,
-    required this.height,
-    this.borderRadius,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: borderRadius ?? BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300, width: 2),
-      ),
-    );
-  }
-}
-
-class BrutalistButton extends StatefulWidget {
-  final String text;
-  final VoidCallback onTap;
+/// 4. NeuBadge — Hexagon NPU / Verified Status Pill
+class NeuBadge extends StatelessWidget {
+  final String label;
+  final IconData? icon;
   final Color backgroundColor;
   final Color textColor;
-  final IconData? icon;
+  final bool isLive;
 
-  const BrutalistButton({
+  const NeuBadge({
     super.key,
-    required this.text,
-    required this.onTap,
-    this.backgroundColor = AppColors.comicYellow,
-    this.textColor = AppColors.brutalBlack,
+    required this.label,
     this.icon,
+    this.backgroundColor = AppColors.npuTeal,
+    this.textColor = AppColors.brutalBlack,
+    this.isLive = false,
   });
 
   @override
-  State<BrutalistButton> createState() => _BrutalistButtonState();
+  Widget build(BuildContext context) {
+    final badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: AppColors.brutalBlack, width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.brutalBlack,
+            offset: Offset(2, 2),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLive) ...[
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
+          if (icon != null && !isLive) ...[
+            Icon(icon, color: textColor, size: 14),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label.toUpperCase(),
+            style: GoogleFonts.fredoka(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return isLive ? PulsingBadge(child: badge) : badge;
+  }
 }
 
-class _BrutalistButtonState extends State<BrutalistButton> {
-  bool _isPressed = false;
+/// 5. NeuProgressBar — Round Striped Progress Indicator
+class NeuProgressBar extends StatelessWidget {
+  final double percentage; // 0 - 100
+  final Color fillColor;
+  final double height;
+
+  const NeuProgressBar({
+    super.key,
+    required this.percentage,
+    this.fillColor = AppColors.popGreen,
+    this.height = 22,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOut,
-        transform: _isPressed ? Matrix4.translationValues(4, 4, 0) : Matrix4.identity(),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        decoration: BoxDecoration(
-          color: widget.backgroundColor,
-          border: Border.all(color: AppColors.brutalBlack, width: 4),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.brutalBlack,
-              offset: _isPressed ? const Offset(0, 0) : const Offset(6, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+    final pct = percentage.clamp(0.0, 100.0);
+
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.brutalBlack, width: 2.5),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.brutalBlack,
+            offset: Offset(2, 2),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(13),
+        child: Stack(
           children: [
-            if (widget.icon != null) ...[
-              Icon(widget.icon, color: widget.textColor, size: 24),
-              const SizedBox(width: 12),
-            ],
-            Text(
-              widget.text.toUpperCase(),
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-                color: widget.textColor,
-                letterSpacing: 1.5,
+            FractionallySizedBox(
+              widthFactor: (pct / 100).clamp(0.0, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: fillColor,
+                ),
               ),
             ),
           ],
@@ -630,55 +385,171 @@ class _BrutalistButtonState extends State<BrutalistButton> {
   }
 }
 
-class BrutalistTextField extends StatelessWidget {
-  final TextEditingController? controller;
-  final String hintText;
-  final bool obscureText;
-  final IconData? prefixIcon;
-  final ValueChanged<String>? onChanged;
+/// 6. NeuStatCard — Five Verified Signal Display Box
+class NeuStatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
 
-  const BrutalistTextField({
+  const NeuStatCard({
     super.key,
-    this.controller,
-    required this.hintText,
-    this.obscureText = false,
-    this.prefixIcon,
-    this.onChanged,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.brutalBlack, width: 3),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.brutalBlack,
-            offset: Offset(4, 4),
+    return NeuCard(
+      backgroundColor: Colors.white,
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.brutalBlack, width: 2),
+                ),
+                child: Icon(icon, color: AppColors.brutalBlack, size: 18),
+              ),
+              Text(
+                title.toUpperCase(),
+                style: GoogleFonts.fredoka(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: GoogleFonts.fredoka(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: AppColors.brutalBlack,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.black45,
+            ),
           ),
         ],
       ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        onChanged: onChanged,
-        style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AppColors.brutalBlack,
+    );
+  }
+}
+
+/// 7. NeuSpeechBubble — Conversational Bubble for Local Gemma Mentor
+class NeuSpeechBubble extends StatelessWidget {
+  final String text;
+  final bool isUser;
+  final String? timeString;
+  final String? modelEngine; // e.g. "Gemma 3n · Hexagon NPU"
+
+  const NeuSpeechBubble({
+    super.key,
+    required this.text,
+    required this.isUser,
+    this.timeString,
+    this.modelEngine,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isUser ? AppColors.popYellow : AppColors.creamCard;
+
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
         ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontFamily: 'Inter',
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(isUser ? 20 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 20),
           ),
-          prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.brutalBlack) : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          border: Border.all(color: AppColors.brutalBlack, width: 2.8),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.brutalBlack,
+              offset: Offset(3.5, 3.5),
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isUser && modelEngine != null) ...[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.memory, size: 12, color: AppColors.brutalBlack),
+                  const SizedBox(width: 4),
+                  Text(
+                    modelEngine!.toUpperCase(),
+                    style: GoogleFonts.fredoka(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                      color: AppColors.popViolet,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+            ],
+            Text(
+              text,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.brutalBlack,
+                height: 1.35,
+              ),
+            ),
+            if (timeString != null) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  timeString!,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black38,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

@@ -1,5 +1,5 @@
 import { Annotation, StateGraph, START, END } from '@langchain/langgraph';
-import { callGeminiJSON } from '../services/gemini.service.js';
+import { callGeminiJSON, callGemini } from '../services/gemini.service.js';
 
 const CareerState = Annotation.Root({
   interests: Annotation({ reducer: (a, b) => b ?? a, default: () => [] }),

@@ -1,80 +1,77 @@
 import { Router } from 'express';
 import { verifyAccessToken } from '../middleware/auth.middleware.js';
-import { requireRole } from '../middleware/role.middleware.js';
 import Doubt from '../models/Doubt.js';
-import HelpTicket from '../models/HelpTicket.js';
-import getIO from '../config/socket.js';
-import { runDoubtSolver } from '../agents/doubtSolver.agent.js';
+import StudentProfile from '../models/StudentProfile.js';
+import { callGeminiJSON, callGemini } from '../services/gemini.service.js';
 
 const router = Router();
+router.use(verifyAccessToken);
 
-router.post('/solve', verifyAccessToken, requireRole('student'), async (req, res) => {
+// POST /api/doubt/solve (Solve multimodal doubt from notebook scan, photo, or text using local model)
+router.post('/solve', async (req, res) => {
   try {
-    const { inputType, transcription, ocrText, originalQuery, imageUrl } = req.body;
-    const queryText = originalQuery || transcription || ocrText;
-    if (!queryText) {
-      return res.status(400).json({ error: 'Provide a query, transcription, or OCR text' });
-    }
+    const {
+      question,
+      subject,
+      inputMode, // 'notebook_scanner', 'camera_ocr', 'voice', 'text'
+      extractedOcrText,
+      scannedBoundingBox,
+      isFormula
+    } = req.body;
 
-    const result = await runDoubtSolver({
-      inputType: inputType || 'text',
-      transcription: transcription || '',
-      ocrText: ocrText || '',
-      originalQuery: queryText
+    const queryText = extractedOcrText || question || 'Explain how to solve this theorem step by step.';
+
+    const prompt = `Solve this academic doubt with step-by-step clarity and LaTeX formula notation:
+Subject: ${subject || 'Mathematics / Physics / Computer Science'}
+Input Mode: ${inputMode || 'notebook_scanner'}
+Formula Mode: ${isFormula ? 'Yes' : 'No'}
+Doubt Content: ${queryText}`;
+
+    const solution = await callGeminiJSON(prompt, {
+      systemPrompt: 'You are an expert STEM professor delivering step-by-step problem breakdowns with verified formula notation.'
     });
-
-    const confidenceScore = result.solution?.confidenceScore !== undefined ? result.solution.confidenceScore : 85;
-    const fallbackActive = confidenceScore < 70;
 
     const doubt = await Doubt.create({
-      studentId: req.user.userId,
-      inputType: inputType || 'text',
-      transcription: transcription || '',
-      ocrText: ocrText || '',
-      imageUrl: imageUrl || '',
-      originalQuery: queryText,
-      courseContext: result.courseContext || '',
-      subject: result.subject || '',
-      solution: result.solution || {},
-      resolved: !fallbackActive
+      userId: req.user.userId,
+      question: queryText,
+      subject: solution.detectedTopic || subject || 'STEM',
+      inputMode: inputMode || 'text',
+      solution: solution.summary || 'Solved',
+      steps: solution.steps || [],
+      finalAnswer: solution.finalAnswer || '',
+      keyTakeaway: solution.keyTakeaway || '',
+      difficulty: solution.difficulty || 'Medium'
     });
 
-    if (fallbackActive) {
-      // Auto routing to teacher help queue
-      const ticket = await HelpTicket.create({
-        studentId: req.user.userId,
-        message: `[AI Doubt Fallback] Student asked: "${queryText}". The AI responded with low confidence (Score: ${confidenceScore}%).`,
-        category: 'doubt-solver',
-        urgency: 'high',
-        status: 'pending'
-      });
-
-      try {
-        const populatedTicket = await HelpTicket.findById(ticket._id)
-          .populate('studentId', 'name studentId email avatar');
-        const io = getIO();
-        io.of('/teacher').emit('help:new_ticket', populatedTicket);
-      } catch (e) {
-        console.error('Failed to emit help socket:', e.message);
+    // Update Student Profile Engagement and Weak Topics
+    let profile = await StudentProfile.findOne({ userId: req.user.userId });
+    if (profile) {
+      profile.engagement.doubtSessionsCount += 1;
+      const topic = solution.detectedTopic || subject || 'General';
+      if (!profile.quizMastery.weakTopics.includes(topic)) {
+        profile.quizMastery.weakTopics.push(topic);
       }
+      profile.xp += 15;
+      await profile.save();
     }
 
-    res.json({ 
-      doubtId: doubt._id, 
-      solution: result.solution, 
-      subject: result.subject,
-      fallbackActive,
-      confidenceScore
+    res.json({
+      doubtId: doubt._id,
+      ...solution
     });
   } catch (error) {
+    console.error('Doubt solve error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.get('/history', verifyAccessToken, requireRole('student'), async (req, res) => {
+// GET /api/doubt/history
+router.get('/history', async (req, res) => {
   try {
-    const doubts = await Doubt.find({ studentId: req.user.userId }).sort({ createdAt: -1 }).limit(20);
-    res.json({ doubts });
+    const doubts = await Doubt.find({ userId: req.user.userId })
+      .sort({ createdAt: -1 })
+      .limit(10);
+    res.json(doubts);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
