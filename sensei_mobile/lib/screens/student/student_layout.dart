@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_theme.dart';
 
 class _NavItem {
   final String label;
@@ -15,13 +16,15 @@ class _NavItem {
 
 final _navItems = [
   const _NavItem('Dashboard', Icons.dashboard_rounded, '/student'),
-  const _NavItem('Mentor', Icons.smart_toy_rounded, '/student/chatbot'),
-  const _NavItem('Beyond', Icons.rocket_launch_rounded, '/student/virtual-beyond'),
-  const _NavItem('Study', Icons.auto_awesome_rounded, '/student/ultra-study'),
-  const _NavItem('Overcome', Icons.fitness_center_rounded, '/student/overcome'),
+  const _NavItem('Mentor', Icons.psychology_rounded, '/student/mentor'),
+  const _NavItem('Quizo', Icons.front_hand_rounded, '/student/quiz/camo'),
   const _NavItem('Focus', Icons.visibility_rounded, '/student/focus-guardian'),
-  const _NavItem('Career', Icons.trending_up_rounded, '/student/career-simulator'),
-  const _NavItem('Social', Icons.people_rounded, '/student/social'),
+  const _NavItem('Doubts', Icons.crop_free_rounded, '/student/doubt-solver'),
+  const _NavItem('Plan', Icons.checklist_rounded, '/student/study-plan'),
+  const _NavItem('Practice', Icons.gavel_rounded, '/student/practice-area'),
+  const _NavItem('World', Icons.public_rounded, '/student/world'),
+  const _NavItem('NPU', Icons.memory_rounded, '/student/npu-console'),
+  const _NavItem('Journal', Icons.mic_rounded, '/student/voice-journal'),
   const _NavItem('Profile', Icons.person_rounded, '/student/profile'),
 ];
 
@@ -58,7 +61,7 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.pageYellow,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.creamBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -75,20 +78,20 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
     final theme = ref.watch(themeProvider);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: AppColors.gold,
+              color: AppColors.popYellow,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 3),
+              border: Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2.5),
               boxShadow: [
                 BoxShadow(
                   color: isDark ? Colors.white : AppColors.brutalBlack,
-                  offset: const Offset(3, 3),
+                  offset: const Offset(2.5, 2.5),
                   blurRadius: 0,
                 ),
               ],
@@ -97,7 +100,7 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : 'S',
                 style: GoogleFonts.fredoka(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.brutalBlack,
                 ),
@@ -112,18 +115,18 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
                 Text(
                   'Hey, $name! 👋',
                   style: GoogleFonts.fredoka(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : AppColors.brutalBlack,
                   ),
                 ),
                 Text(
-                  'TIME TO CRUSH IT!',
-                  style: GoogleFonts.fredoka(
+                  'OBSERVED SIGNALS ACTIVE · NPU LIVE',
+                  style: GoogleFonts.inter(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 3,
-                    color: isDark ? Colors.white54 : Colors.grey.shade500,
+                    letterSpacing: 1.1,
+                    color: isDark ? Colors.white54 : Colors.grey.shade600,
                   ),
                 ),
               ],
@@ -138,11 +141,14 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
                 color: isDark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
+                ],
               ),
               child: Icon(
-                theme == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
-                size: 16,
-                color: isDark ? AppColors.gold : AppColors.brutalBlack,
+                theme == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                size: 18,
+                color: isDark ? AppColors.popYellow : AppColors.brutalBlack,
               ),
             ),
           ),
@@ -155,9 +161,12 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkCard : Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.comicRed, width: 2),
+                border: Border.all(color: AppColors.popCoral, width: 2),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
+                ],
               ),
-              child: const Icon(Icons.logout, size: 16, color: AppColors.comicRed),
+              child: const Icon(Icons.logout_rounded, size: 18, color: AppColors.popCoral),
             ),
           ),
         ],
@@ -169,92 +178,74 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
-        border: Border(top: BorderSide(color: isDark ? Colors.white : AppColors.brutalBlack, width: 3)),
+        border: Border(top: BorderSide(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2.5)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 72,
-            child: ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              itemCount: _navItems.length,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              itemBuilder: (context, index) {
-                final item = _navItems[index];
-                final isActive = index == _currentIndex;
+      child: SizedBox(
+        height: 68,
+        child: ListView.builder(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          itemCount: _navItems.length,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          itemBuilder: (context, index) {
+            final item = _navItems[index];
+            final isActive = index == _currentIndex;
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _currentIndex = index);
-                    context.go(item.route);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 72,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    transform: isActive
-                        ? Matrix4.translationValues(0, -4, 0)
-                        : Matrix4.identity(),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? const Color(0xFFFACC15)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: isActive
-                          ? Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2.5)
-                          : null,
-                      boxShadow: isActive
-                          ? [BoxShadow(
-                              color: isDark ? Colors.white : AppColors.brutalBlack,
-                              offset: const Offset(3, 3),
-                              blurRadius: 0,
-                            )]
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          item.icon,
-                          size: isActive ? 22 : 20,
-                          color: isActive
-                              ? AppColors.brutalBlack
-                              : (isDark ? Colors.white54 : Colors.grey.shade500),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.label,
-                          style: GoogleFonts.fredoka(
-                            fontSize: 8,
-                            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                            color: isActive
-                                ? AppColors.brutalBlack
-                                : (isDark ? Colors.white54 : Colors.grey.shade500),
-                          ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+            return GestureDetector(
+              onTap: () {
+                setState(() => _currentIndex = index);
+                context.go(item.route);
               },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              'Swipe for more →',
-              style: GoogleFonts.fredoka(
-                fontSize: 8,
-                color: isDark ? Colors.white24 : Colors.grey.shade400,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 64,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.popYellow : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isActive
+                      ? Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2)
+                      : null,
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: isDark ? Colors.white : AppColors.brutalBlack,
+                            offset: const Offset(2, 2),
+                            blurRadius: 0,
+                          )
+                        ]
+                      : null,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      item.icon,
+                      size: isActive ? 20 : 18,
+                      color: isActive
+                          ? AppColors.brutalBlack
+                          : (isDark ? Colors.white54 : Colors.grey.shade500),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.label,
+                      style: GoogleFonts.fredoka(
+                        fontSize: 9,
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                        color: isActive
+                            ? AppColors.brutalBlack
+                            : (isDark ? Colors.white54 : Colors.grey.shade500),
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -263,16 +254,17 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.creamCard,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.brutalBlack, width: 3),
         ),
-        title: Text('Logout', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to logout?', style: GoogleFonts.inter()),
+        title: Text('Logout', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: AppColors.brutalBlack)),
+        content: Text('Are you sure you want to log out of SENSEI Ultra?', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.fredoka(color: Colors.grey)),
+            child: Text('Cancel', style: GoogleFonts.fredoka(color: Colors.grey.shade700)),
           ),
           TextButton(
             onPressed: () {
@@ -280,7 +272,7 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
               ref.read(authProvider.notifier).logout();
               context.go('/login');
             },
-            child: Text('Logout', style: GoogleFonts.fredoka(color: AppColors.comicRed, fontWeight: FontWeight.bold)),
+            child: Text('Logout', style: GoogleFonts.fredoka(color: AppColors.popCoral, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
