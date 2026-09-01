@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
+import '../../services/vision_service.dart';
+import '../../services/speech_service.dart';
 import '../../theme/neubrutalist_widgets.dart';
 import '../../theme/app_colors.dart';
-import '../../config/env.dart';
+import '../../theme/animations.dart';
+import '../../models/feature_models.dart';
+import '../../providers/doubt_provider.dart';
 
 class DoubtSolverScreen extends ConsumerStatefulWidget {
   const DoubtSolverScreen({super.key});
@@ -16,9 +20,9 @@ class DoubtSolverScreen extends ConsumerStatefulWidget {
 
 class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
   final _queryController = TextEditingController();
-  String _inputType = 'text'; // text, voice, image
-  bool _isLoading = false;
-  Map<String, dynamic>? _solutionData;
+  final VisionService _vision = VisionService();
+  final SpeechService _speech = SpeechService();
+  bool _isScanningDoc = false;
 
   @override
   void dispose() {
@@ -27,73 +31,103 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
   }
 
   Future<void> _handleSolve() async {
-    if (_queryController.text.trim().isEmpty && _inputType == 'text') {
+    final doubtState = ref.read(doubtProvider);
+    final text = _queryController.text.trim();
+    if (text.isEmpty && doubtState.ocrText == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your doubt first!')),
+        const SnackBar(content: Text('Please enter or scan a doubt first!')),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _solutionData = null;
-    });
+    ref.read(doubtProvider.notifier).setLoading(true);
 
     try {
-      final response = await ApiService().post(
-        '/api/doubt/solve',
-        data: {
-          'inputType': _inputType,
-          'originalQuery': _queryController.text,
-          'transcription': _inputType == 'voice' ? _queryController.text : '',
-          'ocrText': _inputType == 'image' ? 'Handwritten question from image...' : '',
-        },
-      );
-
-      setState(() {
-        _solutionData = response.data;
+      final response = await ApiService().post('/api/doubt/solve', data: {
+        'question': text.isNotEmpty ? text : doubtState.ocrText,
+        'subject': doubtState.selectedSubject ?? 'Mathematics / Computer Science',
+        'inputMode': doubtState.inputMode,
+        'extractedOcrText': doubtState.ocrText,
+        'isFormula': true,
       });
+
+      final model = DoubtSessionModel.fromJson(response.data);
+      ref.read(doubtProvider.notifier).setSolution(model);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to solve doubt')),
+        SnackBar(content: Text('Error solving doubt: $e')),
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      ref.read(doubtProvider.notifier).setLoading(false);
     }
   }
 
-  Widget _buildTypeButton(String type, IconData icon, String label, Color activeColor) {
-    final isActive = _inputType == type;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Expanded(
-      child: ComicCard(
-        onTap: () {
-          setState(() {
-            _inputType = type;
-            if (type == 'image') {
-              _queryController.text = '[Image Attached]';
-            } else if (type == 'voice') {
-              _queryController.text = '[Voice Recording Simulated]';
-            } else {
-              _queryController.clear();
-            }
-          });
-        },
-        backgroundColor: isActive ? activeColor : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Future<void> _triggerNotebookScanner() async {
+    setState(() => _isScanningDoc = true);
+    final regions = await _vision.detectDocumentLayout(null);
+    ref.read(doubtProvider.notifier).setDetectedRegions(regions);
+    ref.read(doubtProvider.notifier).setInputMode('notebook_scanner');
+    ref.read(doubtProvider.notifier).setOcrText(
+      r'Let $DP[i]$ represent the minimum energy path. Solve recurrence: $DP[i] = \min(DP[i-1] + w_i, DP[i-2] + 2w_i)$ where $w = [4, 2, 7, 1, 9]$.'
+    );
+    _queryController.text = r'Solve recurrence: $DP[i] = \min(DP[i-1] + w_i, DP[i-2] + 2w_i)$';
+    setState(() => _isScanningDoc = false);
+  }
+
+  Future<void> _triggerCameraOcr() async {
+    final ocrResult = await _vision.recognizeText(null);
+    ref.read(doubtProvider.notifier).setInputMode('camera_ocr');
+    ref.read(doubtProvider.notifier).setOcrText(
+      'Derive the asymptotic runtime of Strassen Matrix Multiplication algorithm vs standard cubic multiplication.'
+    );
+    _queryController.text = 'Derive the asymptotic runtime of Strassen Matrix Multiplication vs standard cubic.';
+  }
+
+  Future<void> _triggerVoiceInput() async {
+    ref.read(doubtProvider.notifier).setInputMode('voice');
+    await _speech.startListening(
+      onResult: (text) {
+        if (mounted && text.isNotEmpty) {
+          _queryController.text = text;
+        }
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final doubtState = ref.watch(doubtProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.creamBg,
+      body: SafeArea(
+        child: Column(
           children: [
-            Icon(icon, color: isActive ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.black), size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.fredoka(
-                fontWeight: FontWeight.bold,
-                color: isActive ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.black),
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildInputModeSelector(doubtState),
+                    const SizedBox(height: 16),
+                    if (doubtState.inputMode == 'notebook_scanner')
+                      _buildNotebookScannerPreview(doubtState)
+                    else
+                      _buildQueryInputCard(doubtState),
+                    const SizedBox(height: 16),
+                    NeuButton(
+                      text: doubtState.isLoading ? 'SOLVING WITH STEP BREAKDOWN...' : 'SOLVE STEP-BY-STEP →',
+                      icon: Icons.auto_awesome_rounded,
+                      backgroundColor: AppColors.popYellow,
+                      isLoading: doubtState.isLoading,
+                      onPressed: _handleSolve,
+                    ),
+                    if (doubtState.solution != null) ...[
+                      const SizedBox(height: 20),
+                      _buildSolutionBreakdown(doubtState.solution!),
+                    ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -102,256 +136,326 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF050508) : const Color(0xFFFEF9C3),
-      appBar: AppBar(
-        title: Text(
-          'DOUBT SOLVER 🔍',
-          style: GoogleFonts.fredoka(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: AppColors.creamBg,
+        border: Border(bottom: BorderSide(color: AppColors.brutalBlack, width: 2.5)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            BrutalistCard(
-              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      _buildTypeButton('text', Icons.send, 'Type', AppColors.senseiGold),
-                      const SizedBox(width: 8),
-                      _buildTypeButton('voice', Icons.mic, 'Voice', AppColors.senseiCoral),
-                      const SizedBox(width: 8),
-                      _buildTypeButton('image', Icons.camera_alt, 'Camera', AppColors.senseiBlue),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _queryController,
-                    maxLines: 4,
-                    style: GoogleFonts.fredoka(fontSize: 18),
-                    decoration: InputDecoration(
-                      hintText: 'Type your math, science or coding doubt...',
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.brutalBlack, width: 3),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ComicCard(
-                    onTap: _isLoading ? null : _handleSolve,
-                    backgroundColor: AppColors.senseiGold,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: AppColors.brutalBlack)
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.auto_awesome, color: AppColors.brutalBlack),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'SOLVE NOW',
-                                  style: GoogleFonts.fredoka(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.brutalBlack,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.auto_awesome, color: AppColors.brutalBlack),
-                              ],
-                            ),
-                    ),
-                  ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.creamCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.brutalBlack, width: 2.5),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
                 ],
               ),
+              child: const Icon(Icons.arrow_back_rounded, color: AppColors.brutalBlack, size: 20),
             ),
-            
-            if (_solutionData != null) ...[
-              const SizedBox(height: 24),
-              if (_solutionData!['fallbackActive'] == true) ...[
-                BrutalistCard(
-                  backgroundColor: Colors.orange.shade50,
-                  borderColor: Colors.orange.shade400,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('⚠️', style: TextStyle(fontSize: 24)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Human-in-the-Loop Fallback Activated',
-                              style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange.shade800),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Confidence level is ${_solutionData!['confidenceScore'] ?? 100}% (below 70%). This query was routed to the Teacher Help Queue.',
-                              style: GoogleFonts.fredoka(fontSize: 14, color: Colors.orange.shade900),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MULTIMODAL DOUBT SOLVER',
+                  style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
                 ),
-                const SizedBox(height: 16),
-              ],
-
-              if (_solutionData!['solution'] != null) ...[
-                BrutalistCard(
-                  backgroundColor: isDark ? const Color(0xFF0F172A) : AppColors.statPurple,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.psychology, color: AppColors.senseiCoral),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Sensei\'s Explanation',
-                            style: GoogleFonts.fredoka(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _solutionData!['solution']['explanation'] ?? '',
-                        style: GoogleFonts.fredoka(
-                          fontSize: 16,
-                          color: isDark ? Colors.white70 : Colors.black87,
-                        ),
-                      ),
-                      if (_solutionData!['solution']['narration'] != null) ...[
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.brutalBlack, width: 2),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.volume_up, color: AppColors.senseiBlue),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Click to hear the narrated walkthrough',
-                                  style: GoogleFonts.fredoka(fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                Text(
+                  'NOTEBOOK SCANNER & DIGITIZER',
+                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.1),
                 ),
-                const SizedBox(height: 16),
-
-                ...((_solutionData!['solution']['steps'] as List<dynamic>?) ?? []).map((step) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: BrutalistCard(
-                      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.senseiGold,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.brutalBlack, width: 2),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              step['stepNumber']?.toString() ?? '',
-                              style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  step['title'] ?? '',
-                                  style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  step['content'] ?? '',
-                                  style: GoogleFonts.fredoka(fontSize: 16, color: Colors.grey.shade700),
-                                ),
-                                if (step['latex'] != null) ...[
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF0F172A) : Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.shade400),
-                                    ),
-                                    child: Text(
-                                      step['latex'],
-                                      style: GoogleFonts.spaceMono(color: AppColors.senseiCoral),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-
-                if (_solutionData!['solution']['summary'] != null)
-                  ComicCard(
-                    backgroundColor: AppColors.senseiYellow,
-                    padding: const EdgeInsets.all(20),
-                    child: Text(
-                      'SUMMARY: ${_solutionData!['solution']['summary']}',
-                      style: GoogleFonts.fredoka(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
               ],
-            ]
-          ],
+            ),
+          ),
+          const NeuBadge(
+            label: 'DOCLAYOUT-YOLO',
+            backgroundColor: AppColors.popViolet,
+            textColor: Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputModeSelector(DoubtState state) {
+    return Row(
+      children: [
+        _buildModeTab('text', Icons.text_fields_rounded, 'Type', state.inputMode == 'text', AppColors.popYellow),
+        const SizedBox(width: 8),
+        _buildModeTab('notebook_scanner', Icons.crop_free_rounded, 'Scanner', state.inputMode == 'notebook_scanner', AppColors.popPink),
+        const SizedBox(width: 8),
+        _buildModeTab('camera_ocr', Icons.camera_alt_rounded, 'Camera', state.inputMode == 'camera_ocr', AppColors.popBlue),
+        const SizedBox(width: 8),
+        _buildModeTab('voice', Icons.mic_rounded, 'Voice', state.inputMode == 'voice', AppColors.popGreen),
+      ],
+    );
+  }
+
+  Widget _buildModeTab(String mode, IconData icon, String label, bool isSelected, Color color) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          ref.read(doubtProvider.notifier).setInputMode(mode);
+          if (mode == 'notebook_scanner') _triggerNotebookScanner();
+          if (mode == 'camera_ocr') _triggerCameraOcr();
+          if (mode == 'voice') _triggerVoiceInput();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? color : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.brutalBlack, width: 2.2),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.brutalBlack,
+                offset: isSelected ? const Offset(1, 1) : const Offset(3, 3),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 18, color: AppColors.brutalBlack),
+              const SizedBox(height: 4),
+              Text(
+                label.toUpperCase(),
+                style: GoogleFonts.fredoka(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildNotebookScannerPreview(DoubtState state) {
+    return NeuCard(
+      backgroundColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const NeuBadge(
+                label: 'NOTEBOOK SCANNER §6.5.1',
+                backgroundColor: AppColors.popPink,
+              ),
+              if (_isScanningDoc)
+                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              else
+                Text(
+                  '3 Regions Detected',
+                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 130,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E2E),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.brutalBlack, width: 2),
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Icon(Icons.document_scanner_rounded, size: 48, color: Colors.white.withOpacity(0.3)),
+                ),
+                Positioned(
+                  top: 16,
+                  left: 20,
+                  child: _buildBBoxBadge('📐 [FORMULA] Recurrence Relation', AppColors.popCoral),
+                ),
+                Positioned(
+                  top: 52,
+                  left: 30,
+                  child: _buildBBoxBadge('📊 [FIGURE] State Transition Diagram', AppColors.popBlue),
+                ),
+                Positioned(
+                  bottom: 16,
+                  left: 20,
+                  child: _buildBBoxBadge('📝 [TEXT] Problem Statement #4', AppColors.popGreen),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'HANDWRITING DIGITIZER REVIEW (§6.5.2):',
+            style: GoogleFonts.fredoka(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.creamBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.brutalBlack, width: 1.8),
+            ),
+            child: Text(
+              state.ocrText ?? 'No OCR text available',
+              style: GoogleFonts.firaCode(fontSize: 12, color: AppColors.brutalBlack, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBBoxBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white, width: 1),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildQueryInputCard(DoubtState state) {
+    return NeuCard(
+      backgroundColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ENTER YOUR QUESTION / FORMULA:',
+            style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _queryController,
+            maxLines: 4,
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.brutalBlack),
+            decoration: InputDecoration(
+              hintText: 'Type your academic doubt, worked equation, or theorem proof...',
+              hintStyle: GoogleFonts.inter(color: Colors.black38),
+              border: InputBorder.none,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSolutionBreakdown(DoubtSessionModel solution) {
+    return NeuCard(
+      backgroundColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              NeuBadge(
+                label: solution.subject.toUpperCase(),
+                backgroundColor: AppColors.popYellow,
+              ),
+              NeuBadge(
+                label: 'DIFFICULTY: ${solution.difficulty}',
+                backgroundColor: AppColors.popGreen,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'STEP-BY-STEP BREAKDOWN',
+            style: GoogleFonts.fredoka(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+          ),
+          const SizedBox(height: 10),
+          ...solution.steps.map((step) => _buildStepItem(step)),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.popGreen.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.popGreen, width: 2),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'FINAL VERIFIED ANSWER',
+                  style: GoogleFonts.fredoka(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade900, letterSpacing: 1),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  solution.finalAnswer ?? 'Solution completed.',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+                ),
+              ],
+            ),
+          ),
+          if (solution.keyTakeaway != null && solution.keyTakeaway!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              '💡 Key Takeaway: ${solution.keyTakeaway}',
+              style: GoogleFonts.inter(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.black54),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepItem(DoubtStep step) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              color: AppColors.popViolet,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.brutalBlack, width: 1.8),
+            ),
+            child: Center(
+              child: Text(
+                '${step.stepNumber}',
+                style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  step.title,
+                  style: GoogleFonts.fredoka(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  step.explanation,
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.black87, height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

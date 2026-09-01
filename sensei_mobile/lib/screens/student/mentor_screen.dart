@@ -1,32 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/neubrutalist_widgets.dart';
 import '../../theme/animations.dart';
+import '../../providers/mentor_provider.dart';
+import '../../services/speech_service.dart';
 
-class MentorScreen extends StatefulWidget {
+class MentorScreen extends ConsumerStatefulWidget {
   const MentorScreen({super.key});
 
   @override
-  State<MentorScreen> createState() => _MentorScreenState();
+  ConsumerState<MentorScreen> createState() => _MentorScreenState();
 }
 
-class _MentorScreenState extends State<MentorScreen> {
+class _MentorScreenState extends ConsumerState<MentorScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<_ChatMessage> _messages = [];
-  bool _isLoading = false;
-  bool _isOfflineMode = false;
+  final SpeechService _speech = SpeechService();
 
   @override
   void initState() {
     super.initState();
-    _messages.add(_ChatMessage(
-      text: "Hey! I'm your AI Study Mentor powered by on-device Gemma. Ask me anything about your studies — I work offline too! 🚀",
-      isUser: false,
-      engine: "Gemma 3n · Hexagon NPU",
-      timestamp: DateTime.now(),
-    ));
+    Future.microtask(() => ref.read(mentorProvider.notifier).initialize());
   }
 
   @override
@@ -40,48 +36,34 @@ class _MentorScreenState extends State<MentorScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      _messages.add(_ChatMessage(
-        text: text,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
-      _isLoading = true;
-    });
     _messageController.clear();
+    ref.read(mentorProvider.notifier).sendMessage(text);
     _scrollToBottom();
-
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMessage(
-          text: _generateMentorResponse(text),
-          isUser: false,
-          engine: _isOfflineMode ? "Gemma 3n · NPU (Offline)" : "Gemma 3n · Hexagon NPU",
-          timestamp: DateTime.now(),
-        ));
-        _isLoading = false;
-      });
-      _scrollToBottom();
-    });
   }
 
-  String _generateMentorResponse(String input) {
-    final lower = input.toLowerCase();
-    if (lower.contains('math') || lower.contains('calculus')) {
-      return "Great question about mathematics! 📐\n\nHere's my approach:\n1. **Break it into steps** — identify the core operation\n2. **Apply the formula** — use the right theorem\n3. **Verify** — check your answer with a quick estimate\n\nWant me to generate a practice quiz on this topic?";
+  Future<void> _toggleMic() async {
+    final state = ref.read(mentorProvider);
+    if (state.isListening) {
+      ref.read(mentorProvider.notifier).setListening(false);
+      final text = await _speech.stopListening();
+      if (text.isNotEmpty) {
+        _messageController.text = text;
+        _sendMessage();
+      }
+    } else {
+      ref.read(mentorProvider.notifier).setListening(true);
+      await _speech.startListening(
+        onResult: (text) {
+          if (mounted && text.isNotEmpty) {
+            _messageController.text = text;
+          }
+        },
+      );
     }
-    if (lower.contains('study') || lower.contains('plan')) {
-      return "Let's optimize your study plan! 📚\n\n**Recommended approach:**\n• Use the **Pomodoro Technique** — 25 min focus, 5 min break\n• Track progress in your **Study Plan Synthesizer**\n• Test yourself with **Camo Quizo** for active recall\n\nYour Quiz Mastery score will improve naturally as you practice!";
-    }
-    if (lower.contains('help') || lower.contains('stuck')) {
-      return "Don't worry, I've got you! 💪\n\nTry these steps:\n1. Use the **Doubt Solver** to scan your problem\n2. Start a **Focus Guardian** session for deep work\n3. Practice with **Camo Quizo** gestures\n\nRemember: every verified session strengthens your dashboard signals!";
-    }
-    return "That's a great point! 🧠\n\nBased on your study profile, I recommend:\n• **Active Recall** — test yourself, don't just re-read\n• **Spaced Repetition** — review at increasing intervals\n• **Interleaving** — mix different topics in one session\n\nYour engagement score improves with every mentor conversation. Keep going! ✨";
   }
 
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 150), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -94,22 +76,24 @@ class _MentorScreenState extends State<MentorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mentorState = ref.watch(mentorProvider);
+
     return Scaffold(
       backgroundColor: AppColors.creamBg,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            Expanded(child: _buildMessageList()),
-            if (_isLoading) _buildTypingIndicator(),
-            _buildInputBar(),
+            _buildHeader(mentorState),
+            Expanded(child: _buildMessageList(mentorState)),
+            if (mentorState.isLoading) _buildTypingIndicator(),
+            _buildInputBar(mentorState),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(MentorState state) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
@@ -148,19 +132,19 @@ class _MentorScreenState extends State<MentorScreen> {
                 ),
                 const SizedBox(height: 2),
                 NeuBadge(
-                  label: _isOfflineMode ? 'OFFLINE · NPU' : 'ON-DEVICE · NPU',
-                  backgroundColor: _isOfflineMode ? AppColors.popOrange : AppColors.npuTeal,
+                  label: state.isOfflineMode ? 'OFFLINE · HEXAGON NPU' : 'ON-DEVICE · NPU ACTIVE',
+                  backgroundColor: state.isOfflineMode ? AppColors.popOrange : AppColors.npuTeal,
                   isLive: true,
                 ),
               ],
             ),
           ),
           GestureDetector(
-            onTap: () => setState(() => _isOfflineMode = !_isOfflineMode),
+            onTap: () => ref.read(mentorProvider.notifier).toggleOfflineMode(),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: _isOfflineMode ? AppColors.popOrange : AppColors.popGreen,
+                color: state.isOfflineMode ? AppColors.popOrange : AppColors.popGreen,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.brutalBlack, width: 2.5),
                 boxShadow: const [
@@ -171,13 +155,13 @@ class _MentorScreenState extends State<MentorScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _isOfflineMode ? Icons.airplanemode_active : Icons.cloud_done,
+                    state.isOfflineMode ? Icons.airplanemode_active : Icons.bolt,
                     size: 16,
                     color: AppColors.brutalBlack,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _isOfflineMode ? 'OFF' : 'ON',
+                    state.isOfflineMode ? 'OFF' : 'NPU',
                     style: GoogleFonts.fredoka(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -193,19 +177,55 @@ class _MentorScreenState extends State<MentorScreen> {
     );
   }
 
-  Widget _buildMessageList() {
+  Widget _buildMessageList(MentorState state) {
+    if (state.messages.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.popYellow,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.brutalBlack, width: 3),
+                  boxShadow: const [
+                    BoxShadow(color: AppColors.brutalBlack, offset: Offset(4, 4), blurRadius: 0),
+                  ],
+                ),
+                child: const Icon(Icons.psychology_rounded, size: 48, color: AppColors.brutalBlack),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'YOUR NPU STUDY MENTOR',
+                style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Ask questions, request study plans, or review complex concepts offline powered by Gemma 3n on Hexagon NPU.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 13, color: Colors.black54, height: 1.4),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: _messages.length,
+      itemCount: state.messages.length,
       itemBuilder: (context, index) {
-        final msg = _messages[index];
+        final msg = state.messages[index];
         return StaggeredFadeSlide(
           index: index,
           child: NeuSpeechBubble(
             text: msg.text,
             isUser: msg.isUser,
-            modelEngine: msg.engine,
+            modelEngine: msg.modelEngine,
             timeString: _formatTime(msg.timestamp),
           ),
         );
@@ -235,7 +255,7 @@ class _MentorScreenState extends State<MentorScreen> {
                 const Icon(Icons.memory, size: 14, color: AppColors.popViolet),
                 const SizedBox(width: 6),
                 Text(
-                  'THINKING ON NPU...',
+                  'INFERRING ON HEXAGON NPU...',
                   style: GoogleFonts.fredoka(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -251,7 +271,7 @@ class _MentorScreenState extends State<MentorScreen> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(MentorState state) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: const BoxDecoration(
@@ -260,18 +280,24 @@ class _MentorScreenState extends State<MentorScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.popPink,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.brutalBlack, width: 2.5),
-              boxShadow: const [
-                BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.mic, color: AppColors.brutalBlack, size: 22),
-              onPressed: () {},
+          GestureDetector(
+            onTap: _toggleMic,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: state.isListening ? AppColors.popCoral : AppColors.popPink,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.brutalBlack, width: 2.5),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
+                ],
+              ),
+              child: Icon(
+                state.isListening ? Icons.mic_off_rounded : Icons.mic_rounded,
+                color: AppColors.brutalBlack,
+                size: 22,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -294,7 +320,7 @@ class _MentorScreenState extends State<MentorScreen> {
                   color: AppColors.brutalBlack,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Ask your mentor...',
+                  hintText: state.isListening ? 'Listening via offline STT...' : 'Ask your NPU mentor...',
                   hintStyle: GoogleFonts.inter(color: Colors.black38),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -328,18 +354,4 @@ class _MentorScreenState extends State<MentorScreen> {
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
-}
-
-class _ChatMessage {
-  final String text;
-  final bool isUser;
-  final String? engine;
-  final DateTime timestamp;
-
-  _ChatMessage({
-    required this.text,
-    required this.isUser,
-    this.engine,
-    required this.timestamp,
-  });
 }
