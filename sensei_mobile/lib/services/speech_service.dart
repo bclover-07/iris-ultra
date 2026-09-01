@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'npu_event_service.dart';
 
 class SpeechService {

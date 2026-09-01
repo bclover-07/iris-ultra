@@ -1,83 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
-import 'animations.dart';
 
-/// 1. NeuCard — Round-edged Neu-brutalist Card with Hard Box-Shadow
-class NeuCard extends StatefulWidget {
+/// 1. NeuCard — Core Neu-Brutalist container
+class NeuCard extends StatelessWidget {
   final Widget child;
-  final Color? backgroundColor;
+  final Color backgroundColor;
   final Color borderColor;
   final double borderWidth;
-  final double shadowOffset;
-  final BorderRadius? borderRadius;
+  final double borderRadius;
+  final Offset shadowOffset;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
 
   const NeuCard({
     super.key,
     required this.child,
-    this.backgroundColor,
+    this.backgroundColor = AppColors.creamCard,
     this.borderColor = AppColors.brutalBlack,
-    this.borderWidth = 3.0,
-    this.shadowOffset = 5.0,
-    this.borderRadius,
-    this.padding = const EdgeInsets.all(16),
+    this.borderWidth = 2.5,
+    this.borderRadius = 20.0,
+    this.shadowOffset = const Offset(3.5, 3.5),
+    this.padding = const EdgeInsets.all(16.0),
     this.onTap,
   });
 
   @override
-  State<NeuCard> createState() => _NeuCardState();
-}
-
-class _NeuCardState extends State<NeuCard> {
-  bool _isPressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    final effectiveRadius = widget.borderRadius ?? BorderRadius.circular(20);
-    final bg = widget.backgroundColor ?? AppColors.creamCard;
-    final hasTap = widget.onTap != null;
-
-    return GestureDetector(
-      onTapDown: hasTap ? (_) => setState(() => _isPressed = true) : null,
-      onTapUp: hasTap
-          ? (_) {
-              setState(() => _isPressed = false);
-              widget.onTap?.call();
-            }
-          : null,
-      onTapCancel: hasTap ? () => setState(() => _isPressed = false) : null,
-      child: AnimatedContainer(
-        duration: NeuAnimations.fast,
-        curve: Curves.easeOutQuad,
-        padding: widget.padding,
-        transform: Matrix4.translationValues(
-          _isPressed ? 2.5 : 0,
-          _isPressed ? 2.5 : 0,
-          0,
-        ),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: effectiveRadius,
-          border: Border.all(color: widget.borderColor, width: widget.borderWidth),
-          boxShadow: [
-            BoxShadow(
-              color: widget.borderColor,
-              offset: _isPressed
-                  ? const Offset(1.5, 1.5)
-                  : Offset(widget.shadowOffset, widget.shadowOffset),
-              blurRadius: 0,
-            ),
-          ],
-        ),
-        child: widget.child,
+    Widget card = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: borderColor, width: borderWidth),
+        boxShadow: [
+          BoxShadow(
+            color: borderColor,
+            offset: shadowOffset,
+            blurRadius: 0,
+          ),
+        ],
       ),
+      child: child,
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: card,
+      );
+    }
+    return card;
   }
 }
 
-/// 2. NeuButton — Bouncy Neu-brutalist Action Button with Round Edges
+/// 2. NeuButton — High-contrast clickable button
 class NeuButton extends StatefulWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -86,20 +63,18 @@ class NeuButton extends StatefulWidget {
   final IconData? icon;
   final bool isLoading;
   final double height;
-  final double? width;
-  final BorderRadius? borderRadius;
+  final double fontSize;
 
   const NeuButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.backgroundColor = AppColors.popYellow,
     this.textColor = AppColors.brutalBlack,
     this.icon,
     this.isLoading = false,
-    this.height = 54,
-    this.width,
-    this.borderRadius,
+    this.height = 48.0,
+    this.fontSize = 14.0,
   });
 
   @override
@@ -111,49 +86,38 @@ class _NeuButtonState extends State<NeuButton> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveRadius = widget.borderRadius ?? BorderRadius.circular(16);
-    final enabled = widget.onPressed != null && !widget.isLoading;
+    final bool enabled = widget.onPressed != null && !widget.isLoading;
 
     return GestureDetector(
       onTapDown: enabled ? (_) => setState(() => _isPressed = true) : null,
-      onTapUp: enabled
-          ? (_) {
-              setState(() => _isPressed = false);
-              widget.onPressed?.call();
-            }
-          : null,
+      onTapUp: enabled ? (_) => setState(() => _isPressed = false) : null,
       onTapCancel: enabled ? () => setState(() => _isPressed = false) : null,
+      onTap: enabled ? widget.onPressed : null,
       child: AnimatedContainer(
-        duration: NeuAnimations.fast,
-        curve: Curves.easeOutQuad,
+        duration: const Duration(milliseconds: 80),
         height: widget.height,
-        width: widget.width,
-        transform: Matrix4.translationValues(
-          _isPressed ? 3 : 0,
-          _isPressed ? 3 : 0,
-          0,
-        ),
+        transform: _isPressed ? Matrix4.translationValues(2, 2, 0) : Matrix4.identity(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
           color: enabled ? widget.backgroundColor : Colors.grey.shade300,
-          borderRadius: effectiveRadius,
-          border: Border.all(color: AppColors.brutalBlack, width: 3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.brutalBlack, width: 2.5),
           boxShadow: [
             BoxShadow(
               color: AppColors.brutalBlack,
-              offset: _isPressed ? const Offset(1, 1) : const Offset(4, 4),
+              offset: _isPressed ? const Offset(1, 1) : const Offset(3.5, 3.5),
               blurRadius: 0,
             ),
           ],
         ),
         child: Center(
           child: widget.isLoading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    color: AppColors.brutalBlack,
+                    strokeWidth: 2.5,
+                    color: widget.textColor,
                   ),
                 )
               : Row(
@@ -161,15 +125,15 @@ class _NeuButtonState extends State<NeuButton> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (widget.icon != null) ...[
-                      Icon(widget.icon, color: widget.textColor, size: 20),
+                      Icon(widget.icon, size: 18, color: widget.textColor),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       widget.text.toUpperCase(),
                       style: GoogleFonts.fredoka(
-                        fontSize: 14,
+                        fontSize: widget.fontSize,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+                        letterSpacing: 0.8,
                         color: widget.textColor,
                       ),
                     ),
@@ -181,121 +145,106 @@ class _NeuButtonState extends State<NeuButton> {
   }
 }
 
-/// 3. NeuTextField — Round-edged Form Input with Neu-brutalist styling
+/// 3. NeuTextField — Thick-bordered input
 class NeuTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String hintText;
-  final String? labelText;
-  final bool obscureText;
   final IconData? prefixIcon;
   final Widget? suffixIcon;
-  final ValueChanged<String>? onChanged;
-  final int maxLines;
+  final bool obscureText;
   final TextInputType keyboardType;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final int maxLines;
 
   const NeuTextField({
     super.key,
     this.controller,
     required this.hintText,
-    this.labelText,
-    this.obscureText = false,
     this.prefixIcon,
     this.suffixIcon,
-    this.onChanged,
-    this.maxLines = 1,
+    this.obscureText = false,
     this.keyboardType = TextInputType.text,
+    this.onChanged,
+    this.onSubmitted,
+    this.maxLines = 1,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (labelText != null) ...[
-          Text(
-            labelText!.toUpperCase(),
-            style: GoogleFonts.fredoka(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-              color: AppColors.brutalBlack,
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.brutalBlack, width: 2.5),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.brutalBlack,
+            offset: Offset(3, 3),
+            blurRadius: 0,
           ),
-          const SizedBox(height: 6),
         ],
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.brutalBlack, width: 2.8),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.brutalBlack,
-                offset: Offset(3.5, 3.5),
-                blurRadius: 0,
-              ),
-            ],
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: obscureText,
-            onChanged: onChanged,
-            maxLines: maxLines,
-            keyboardType: keyboardType,
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.brutalBlack,
-            ),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: GoogleFonts.inter(
-                color: Colors.black38,
-                fontWeight: FontWeight.w500,
-              ),
-              prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, color: AppColors.brutalBlack, size: 20)
-                  : null,
-              suffixIcon: suffixIcon,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            ),
-          ),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        maxLines: maxLines,
+        style: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.brutalBlack,
         ),
-      ],
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black38,
+          ),
+          prefixIcon: prefixIcon != null
+              ? Icon(prefixIcon, color: AppColors.brutalBlack, size: 20)
+              : null,
+          suffixIcon: suffixIcon,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
     );
   }
 }
 
-/// 4. NeuBadge — Hexagon NPU / Verified Status Pill
+/// 4. NeuBadge — Pill chip
 class NeuBadge extends StatelessWidget {
   final String label;
-  final IconData? icon;
   final Color backgroundColor;
   final Color textColor;
+  final IconData? icon;
   final bool isLive;
 
   const NeuBadge({
     super.key,
     required this.label,
-    this.icon,
-    this.backgroundColor = AppColors.npuTeal,
+    this.backgroundColor = AppColors.popYellow,
     this.textColor = AppColors.brutalBlack,
+    this.icon,
     this.isLive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final badge = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: AppColors.brutalBlack, width: 2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.brutalBlack, width: 1.8),
         boxShadow: const [
           BoxShadow(
             color: AppColors.brutalBlack,
-            offset: Offset(2, 2),
+            offset: Offset(1.5, 1.5),
             blurRadius: 0,
           ),
         ],
@@ -305,39 +254,36 @@ class NeuBadge extends StatelessWidget {
         children: [
           if (isLive) ...[
             Container(
-              width: 8,
-              height: 8,
+              width: 6,
+              height: 6,
               decoration: const BoxDecoration(
                 color: Colors.red,
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 6),
-          ],
-          if (icon != null && !isLive) ...[
-            Icon(icon, color: textColor, size: 14),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
+          ] else if (icon != null) ...[
+            Icon(icon, size: 12, color: textColor),
+            const SizedBox(width: 4),
           ],
           Text(
             label.toUpperCase(),
             style: GoogleFonts.fredoka(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+              letterSpacing: 0.8,
               color: textColor,
             ),
           ),
         ],
       ),
     );
-
-    return isLive ? PulsingBadge(child: badge) : badge;
   }
 }
 
-/// 5. NeuProgressBar — Round Striped Progress Indicator
+/// 5. NeuProgressBar — Progress meter
 class NeuProgressBar extends StatelessWidget {
-  final double percentage; // 0 - 100
+  final double percentage;
   final Color fillColor;
   final double height;
 
@@ -345,19 +291,19 @@ class NeuProgressBar extends StatelessWidget {
     super.key,
     required this.percentage,
     this.fillColor = AppColors.popGreen,
-    this.height = 22,
+    this.height = 14.0,
   });
 
   @override
   Widget build(BuildContext context) {
-    final pct = percentage.clamp(0.0, 100.0);
+    final clamped = (percentage / 100.0).clamp(0.0, 1.0);
 
     return Container(
       height: height,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.brutalBlack, width: 2.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.brutalBlack, width: 2),
         boxShadow: const [
           BoxShadow(
             color: AppColors.brutalBlack,
@@ -366,26 +312,21 @@ class NeuProgressBar extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(13),
-        child: Stack(
-          children: [
-            FractionallySizedBox(
-              widthFactor: (pct / 100).clamp(0.0, 1.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: fillColor,
-                ),
-              ),
-            ),
-          ],
+      child: FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: clamped,
+        child: Container(
+          decoration: BoxDecoration(
+            color: fillColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );
   }
 }
 
-/// 6. NeuStatCard — Five Verified Signal Display Box
+/// 6. NeuStatCard — Stat Display
 class NeuStatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -419,7 +360,7 @@ class NeuStatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.25),
+                  color: color.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.brutalBlack, width: 2),
                 ),
@@ -430,7 +371,7 @@ class NeuStatCard extends StatelessWidget {
                 style: GoogleFonts.fredoka(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1,
+                  letterSpacing: 0.8,
                   color: Colors.black54,
                 ),
               ),
@@ -442,6 +383,7 @@ class NeuStatCard extends StatelessWidget {
             style: GoogleFonts.fredoka(
               fontSize: 26,
               fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
               color: AppColors.brutalBlack,
             ),
           ),
@@ -450,9 +392,11 @@ class NeuStatCard extends StatelessWidget {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: Colors.black45,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -460,46 +404,46 @@ class NeuStatCard extends StatelessWidget {
   }
 }
 
-/// 7. NeuSpeechBubble — Conversational Bubble for Local Gemma Mentor
+/// 7. NeuSpeechBubble — Mentor bubble
 class NeuSpeechBubble extends StatelessWidget {
   final String text;
   final bool isUser;
+  final String? modelEngine;
   final String? timeString;
-  final String? modelEngine; // e.g. "Gemma 3n · Hexagon NPU"
 
   const NeuSpeechBubble({
     super.key,
     required this.text,
     required this.isUser,
-    this.timeString,
     this.modelEngine,
+    this.timeString,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bg = isUser ? AppColors.popYellow : AppColors.creamCard;
-
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
+        margin: EdgeInsets.only(
+          top: 6,
+          bottom: 6,
+          left: isUser ? 48 : 16,
+          right: isUser ? 16 : 48,
         ),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: bg,
+          color: isUser ? AppColors.popYellow : AppColors.creamCard,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
             bottomLeft: Radius.circular(isUser ? 20 : 4),
             bottomRight: Radius.circular(isUser ? 4 : 20),
           ),
-          border: Border.all(color: AppColors.brutalBlack, width: 2.8),
+          border: Border.all(color: AppColors.brutalBlack, width: 2.2),
           boxShadow: const [
             BoxShadow(
               color: AppColors.brutalBlack,
-              offset: Offset(3.5, 3.5),
+              offset: Offset(3, 3),
               blurRadius: 0,
             ),
           ],
@@ -551,6 +495,170 @@ class NeuSpeechBubble extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// Legacy Backward Compatibility Widget Aliases
+// -------------------------------------------------------------
+
+class BrutalistCard extends StatelessWidget {
+  final Widget child;
+  final Color backgroundColor;
+  final Color borderColor;
+  final EdgeInsetsGeometry padding;
+  final VoidCallback? onTap;
+
+  const BrutalistCard({
+    super.key,
+    required this.child,
+    this.backgroundColor = Colors.white,
+    this.borderColor = AppColors.brutalBlack,
+    this.padding = const EdgeInsets.all(16.0),
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NeuCard(
+      backgroundColor: backgroundColor,
+      borderColor: borderColor,
+      padding: padding,
+      onTap: onTap,
+      child: child,
+    );
+  }
+}
+
+class ComicCard extends StatelessWidget {
+  final Widget child;
+  final Color backgroundColor;
+  final Color borderColor;
+  final EdgeInsetsGeometry padding;
+  final VoidCallback? onTap;
+
+  const ComicCard({
+    super.key,
+    required this.child,
+    this.backgroundColor = Colors.white,
+    this.borderColor = AppColors.brutalBlack,
+    this.padding = const EdgeInsets.all(16.0),
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NeuCard(
+      backgroundColor: backgroundColor,
+      borderColor: borderColor,
+      padding: padding,
+      onTap: onTap,
+      child: child,
+    );
+  }
+}
+
+class BrutalistButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onTap;
+  final Color backgroundColor;
+
+  const BrutalistButton({
+    super.key,
+    required this.text,
+    this.onTap,
+    this.backgroundColor = AppColors.popYellow,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NeuButton(
+      text: text,
+      onPressed: onTap,
+      backgroundColor: backgroundColor,
+    );
+  }
+}
+
+class ComicButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final Color backgroundColor;
+
+  const ComicButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.backgroundColor = AppColors.popYellow,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NeuButton(
+      text: label,
+      onPressed: onPressed,
+      backgroundColor: backgroundColor,
+    );
+  }
+}
+
+class StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+  final Color backgroundColor;
+  final Color borderColor;
+  final VoidCallback? onTap;
+
+  const StatCard({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.iconColor = AppColors.popViolet,
+    this.backgroundColor = Colors.white,
+    this.borderColor = AppColors.brutalBlack,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NeuStatCard(
+      title: label,
+      value: value,
+      subtitle: '',
+      icon: icon,
+      color: iconColor,
+      onTap: onTap,
+    );
+  }
+}
+
+class PowBurst extends StatelessWidget {
+  final String text;
+  final Color backgroundColor;
+  final Color textColor;
+  final double rotation;
+
+  const PowBurst({
+    super.key,
+    required this.text,
+    this.backgroundColor = AppColors.popYellow,
+    this.textColor = AppColors.brutalBlack,
+    this.rotation = 0.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: rotation,
+      child: NeuBadge(
+        label: text,
+        backgroundColor: backgroundColor,
+        textColor: textColor,
       ),
     );
   }

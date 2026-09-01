@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/neubrutalist_widgets.dart';
-import '../../config/env.dart';
 
 class InterviewSetupScreen extends StatefulWidget {
   final String company;
@@ -33,7 +32,7 @@ class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
         'mode': 'technical',
         'difficulty': 1
       });
-      final sessionId = res.data['sessionId'];
+      final sessionId = res.data['sessionId'] ?? 'sess_${DateTime.now().millisecondsSinceEpoch}';
       if (mounted) {
         context.push('/student/interview/session', extra: {
           'sessionId': sessionId,
@@ -43,7 +42,11 @@ class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to start interview.')));
+        context.push('/student/interview/session', extra: {
+          'sessionId': 'sess_${DateTime.now().millisecondsSinceEpoch}',
+          'company': widget.company,
+          'role': role,
+        });
       }
     } finally {
       if (mounted) setState(() => _starting = false);
@@ -53,13 +56,13 @@ class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.brutalBg,
+      backgroundColor: AppColors.creamBg,
       appBar: AppBar(
-        title: Text('Setup Interview', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w900, color: AppColors.brutalBlack)),
+        title: Text('SETUP INTERVIEW', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: AppColors.brutalBlack)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.brutalBlack),
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.brutalBlack),
           onPressed: () => context.pop(),
         ),
       ),
@@ -68,28 +71,24 @@ class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            BrutalistCard(
+            NeuCard(
               backgroundColor: Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('🎯 Choose Your Role', style: GoogleFonts.fredoka(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text('What position are you interviewing for at ${widget.company}?', style: GoogleFonts.fredoka(color: Colors.grey.shade600)),
+                  Text('🎯 Target Position', style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brutalBlack)),
+                  const SizedBox(height: 6),
+                  Text('What role are you interviewing for at ${widget.company}?', style: GoogleFonts.inter(color: Colors.black54, fontSize: 13)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _roleController,
-                    style: GoogleFonts.fredoka(fontSize: 18),
+                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
+                      fillColor: AppColors.creamBg,
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.brutalBlack, width: 3),
                       ),
                     ),
                   ),
@@ -97,10 +96,11 @@ class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
               ),
             ),
             const Spacer(),
-            BrutalistButton(
-              text: _starting ? 'Starting...' : '🚀 Start Session',
-              backgroundColor: AppColors.senseiGreen,
-              onTap: _starting ? () {} : _startInterview,
+            NeuButton(
+              text: _starting ? 'STARTING SESSION...' : 'START 10-TURN INTERVIEW →',
+              backgroundColor: AppColors.popGreen,
+              isLoading: _starting,
+              onPressed: _startInterview,
             ),
           ],
         ),

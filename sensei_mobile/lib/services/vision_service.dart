@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'npu_event_service.dart';
 
 enum VisionTask { ocr, faceMesh, handLandmark, poseDetection, documentLayout }

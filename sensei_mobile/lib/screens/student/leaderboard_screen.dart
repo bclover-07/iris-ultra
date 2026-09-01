@@ -96,16 +96,16 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: isCurrentUser
-                              ? (isDark ? const Color(0xFF334155) : AppColors.senseiYellow.withValues(alpha: 0.2))
+                              ? (isDark ? const Color(0xFF334155) : AppColors.popYellow.withValues(alpha: 0.2))
                               : (isDark ? const Color(0xFF1E293B) : Colors.white),
                           border: Border.all(
-                            color: isCurrentUser ? AppColors.senseiYellow : AppColors.brutalBlack,
+                            color: isCurrentUser ? AppColors.popYellow : AppColors.brutalBlack,
                             width: isCurrentUser ? 3 : 2,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: isCurrentUser ? AppColors.senseiYellow.withValues(alpha: 0.5) : AppColors.brutalBlack,
+                              color: isCurrentUser ? AppColors.popYellow.withValues(alpha: 0.5) : AppColors.brutalBlack,
                               offset: const Offset(4, 4),
                             ),
                           ],
@@ -136,7 +136,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                         const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(color: AppColors.senseiYellow, borderRadius: BorderRadius.circular(8)),
+                                          decoration: BoxDecoration(color: AppColors.popYellow, borderRadius: BorderRadius.circular(8)),
                                           child: Text('YOU', style: GoogleFonts.spaceMono(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
                                         ),
                                       ],

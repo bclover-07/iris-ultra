@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 enum NpuBackend { npu, gpu, cpu, cloud }

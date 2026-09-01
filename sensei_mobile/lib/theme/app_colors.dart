@@ -40,6 +40,24 @@ class AppColors {
   static const Color darkCard = Color(0xFF1E1E24);
   static const Color darkBorder = Color(0xFFFFFFFF);
 
+  // Legacy Compatibility Aliases (maps legacy theme tokens to Neu-Brutalist palette)
+  static const Color brutalBg = creamBg;
+  static const Color pageYellow = creamBg;
+  static const Color gold = popYellow;
+  static const Color senseiYellow = popYellow;
+  static const Color senseiGreen = popGreen;
+  static const Color senseiBlue = popBlue;
+  static const Color senseiPurple = popViolet;
+  static const Color senseiCoral = popCoral;
+  static const Color senseiPink = popPink;
+  static const Color senseiRed = popCoral;
+  static const Color comicRed = popCoral;
+  static const Color comicGreen = popGreen;
+  static const Color comicBlue = popBlue;
+  static const Color comicYellow = popYellow;
+  static const Color comicOrange = popOrange;
+  static const Color comicPurple = popViolet;
+
   static Color getRiskColor(String tier) {
     switch (tier.toLowerCase()) {
       case 'low': return riskLow;
