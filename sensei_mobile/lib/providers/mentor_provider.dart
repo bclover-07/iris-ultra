@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 import '../services/on_device_llm_service.dart';
-import '../services/npu_event_service.dart';
 
 class ChatMessage {
   final String text;

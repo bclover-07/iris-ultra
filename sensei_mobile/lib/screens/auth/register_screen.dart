@@ -17,7 +17,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _deptController = TextEditingController(text: 'Computer Science');
   bool _isLoading = false;
   String? _error;
 
@@ -26,7 +25,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _deptController.dispose();
     super.dispose();
   }
 
@@ -48,7 +46,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        department: _deptController.text.trim(),
         role: 'student',
       );
       if (mounted) {
@@ -73,7 +70,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Top Back / Brand
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -92,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: const Icon(Icons.arrow_back_rounded, color: AppColors.brutalBlack, size: 20),
                     ),
                   ),
-                  NeuBadge(
+                  const NeuBadge(
                     label: 'NEW STUDENT REGISTRATION',
                     backgroundColor: AppColors.popPink,
                     textColor: Colors.white,
@@ -101,7 +97,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 28),
 
-              // Form Card
               NeuCard(
                 backgroundColor: Colors.white,
                 child: Column(
@@ -126,7 +121,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Full Name
                     Text(
                       'FULL NAME',
                       style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
@@ -147,7 +141,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Email
                     Text(
                       'STUDENT EMAIL',
                       style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
@@ -163,33 +156,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: TextField(
                         controller: _emailController,
                         style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: 'alex@student.univ.edu'),
+                        decoration: const InputDecoration(border: InputBorder.none, hintText: 'alex.rivera@sensei.ai'),
                       ),
                     ),
                     const SizedBox(height: 14),
 
-                    // Department
-                    Text(
-                      'DEPARTMENT / MAJOR',
-                      style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.creamBg,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.brutalBlack, width: 2),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: TextField(
-                        controller: _deptController,
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: 'Computer Science & AI'),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Password
                     Text(
                       'PASSWORD',
                       style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),

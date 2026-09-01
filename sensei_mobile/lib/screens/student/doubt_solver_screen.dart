@@ -101,7 +101,7 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
   }
 
   Future<void> _triggerCameraOcr() async {
-    final ocrResult = await _vision.recognizeText(null);
+    await _vision.recognizeText(null);
     ref.read(doubtProvider.notifier).setInputMode('camera_ocr');
     ref.read(doubtProvider.notifier).setOcrText(
       'Derive the asymptotic runtime of Strassen Matrix Multiplication algorithm vs standard cubic multiplication.'

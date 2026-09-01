@@ -42,7 +42,7 @@ class _DebateScreenState extends ConsumerState<DebateScreen> {
       final response = await ApiService().get('/api/debate');
       if (mounted) {
         setState(() {
-          _sessions = response.data['sessions'] ?? [];
+          _sessions = response.data['sessions'] ?? response.data['history'] ?? [];
           _isLoading = false;
         });
       }
@@ -59,7 +59,7 @@ class _DebateScreenState extends ConsumerState<DebateScreen> {
         'topic': topic,
         'aiPersonality': aiPersonality,
       });
-      final sessionId = res.data['sessionId'];
+      final sessionId = res.data['sessionId'] ?? res.data['id'] ?? 'deb_mock_${DateTime.now().millisecondsSinceEpoch}';
       if (mounted) {
         context.push('/student/debate/session', extra: {
           'sessionId': sessionId,
@@ -79,9 +79,6 @@ class _DebateScreenState extends ConsumerState<DebateScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // We'll just pick a default topic if they just click on a personality, 
-    // or default personality if they just click on a topic, just for simplicity in this mobile UI.
     const defaultTopic = "AI will eventually replace most human jobs";
     const defaultAi = "aggressive_politician";
 
@@ -226,6 +223,42 @@ class _DebateScreenState extends ConsumerState<DebateScreen> {
                       ),
                     ),
                   )),
+
+                  if (_sessions.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text('RECENT DEBATES', style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    ..._sessions.take(3).map((s) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: BrutalistCard(
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(s['topic'] ?? 'AI Ethics Debate', style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold)),
+                                  Text('Opponent: ${s['aiPersonality'] ?? "AI Persona"}', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.senseiYellow,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.brutalBlack, width: 1.5),
+                              ),
+                              child: Text('${s['score'] ?? 85} PTS', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
+                  ],
                 ],
               ),
             ),

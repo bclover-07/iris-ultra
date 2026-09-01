@@ -48,12 +48,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 
   List<Map<String, dynamic>> _getFallbackLeaderboard() {
     return [
-      {'rank': 1, 'name': 'Aarav Sharma', 'department': 'Computer Science', 'xp': 2450, 'level': 5, 'streak': 14, 'quizMastery': 95, 'presenceConsistency': 96, 'isCurrentUser': false},
-      {'rank': 2, 'name': 'Priya Patel', 'department': 'AI & Data Science', 'xp': 2180, 'level': 4, 'streak': 11, 'quizMastery': 92, 'presenceConsistency': 91, 'isCurrentUser': false},
-      {'rank': 3, 'name': 'Alex Rivera (You)', 'department': 'Computer Science', 'xp': 1950, 'level': 4, 'streak': 9, 'quizMastery': 88, 'presenceConsistency': 94, 'isCurrentUser': true},
-      {'rank': 4, 'name': 'Ananya Iyer', 'department': 'Information Tech', 'xp': 1720, 'level': 3, 'streak': 7, 'quizMastery': 89, 'presenceConsistency': 88, 'isCurrentUser': false},
-      {'rank': 5, 'name': 'Vikram Mehta', 'department': 'Electronics', 'xp': 1540, 'level': 3, 'streak': 6, 'quizMastery': 84, 'presenceConsistency': 85, 'isCurrentUser': false},
-      {'rank': 6, 'name': 'Neha Joshi', 'department': 'Computer Science', 'xp': 1320, 'level': 2, 'streak': 5, 'quizMastery': 82, 'presenceConsistency': 80, 'isCurrentUser': false},
+      {'rank': 1, 'name': 'Aarav Sharma', 'xp': 2450, 'level': 5, 'streak': 14, 'quizMastery': 95, 'presenceConsistency': 96, 'isCurrentUser': false},
+      {'rank': 2, 'name': 'Priya Patel', 'xp': 2180, 'level': 4, 'streak': 11, 'quizMastery': 92, 'presenceConsistency': 91, 'isCurrentUser': false},
+      {'rank': 3, 'name': 'Alex Rivera (You)', 'xp': 1950, 'level': 4, 'streak': 9, 'quizMastery': 88, 'presenceConsistency': 94, 'isCurrentUser': true},
+      {'rank': 4, 'name': 'Ananya Iyer', 'xp': 1720, 'level': 3, 'streak': 7, 'quizMastery': 89, 'presenceConsistency': 88, 'isCurrentUser': false},
+      {'rank': 5, 'name': 'Vikram Mehta', 'xp': 1540, 'level': 3, 'streak': 6, 'quizMastery': 84, 'presenceConsistency': 85, 'isCurrentUser': false},
+      {'rank': 6, 'name': 'Neha Joshi', 'xp': 1320, 'level': 2, 'streak': 5, 'quizMastery': 82, 'presenceConsistency': 80, 'isCurrentUser': false},
     ];
   }
 
@@ -137,7 +137,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${entry['department'] ?? "Computer Science"} · 🔥 ${entry['streak'] ?? 1}d Streak',
+                                          '🔥 ${entry['streak'] ?? 1}d Streak · 🎯 ${entry['quizMastery'] ?? 85}% Mastery',
                                           style: GoogleFonts.inter(fontSize: 11, color: Colors.black87, fontWeight: FontWeight.w600),
                                         ),
                                       ],

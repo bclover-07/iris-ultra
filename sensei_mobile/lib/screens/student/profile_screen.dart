@@ -49,95 +49,97 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.creamBg,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    NeuCard(
-                      backgroundColor: Colors.white,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Container(
-                            width: 76,
-                            height: 76,
-                            decoration: BoxDecoration(
-                              color: AppColors.popYellow,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.brutalBlack, width: 3),
-                              boxShadow: const [
-                                BoxShadow(color: AppColors.brutalBlack, offset: Offset(3, 3), blurRadius: 0),
+                          NeuCard(
+                            backgroundColor: Colors.white,
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 76,
+                                  height: 76,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.popYellow,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: AppColors.brutalBlack, width: 3),
+                                    boxShadow: const [
+                                      BoxShadow(color: AppColors.brutalBlack, offset: Offset(3, 3), blurRadius: 0),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    initial,
+                                    style: GoogleFonts.fredoka(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  user?.name ?? 'Alex Rivera',
+                                  style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+                                ),
+                                Text(
+                                  user?.email ?? 'alex.rivera@sensei.ai',
+                                  style: GoogleFonts.inter(fontSize: 12, color: Colors.black54),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    NeuBadge(label: 'LVL ${profile?['level'] ?? 1}', backgroundColor: AppColors.popYellow),
+                                    const SizedBox(width: 8),
+                                    NeuBadge(label: '${profile?['xp'] ?? 250} XP', backgroundColor: AppColors.popPink),
+                                    const SizedBox(width: 8),
+                                    NeuBadge(label: '🔥 ${profile?['streak'] ?? 3} DAYS', backgroundColor: AppColors.popCoral, textColor: Colors.white),
+                                  ],
+                                ),
                               ],
                             ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              initial,
-                              style: GoogleFonts.fredoka(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            user?.name ?? 'Student',
-                            style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
-                          ),
-                          Text(
-                            user?.email ?? 'student@sensei.ai',
-                            style: GoogleFonts.inter(fontSize: 12, color: Colors.black54),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              NeuBadge(label: 'LVL ${profile?['level'] ?? 1}', backgroundColor: AppColors.popYellow),
-                              const SizedBox(width: 8),
-                              NeuBadge(label: '${profile?['xp'] ?? 250} XP', backgroundColor: AppColors.popPink),
-                              const SizedBox(width: 8),
-                              NeuBadge(label: '🔥 ${profile?['streak'] ?? 3} DAYS', backgroundColor: AppColors.popCoral, textColor: Colors.white),
-                            ],
+                          NeuCard(
+                            backgroundColor: Colors.white,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '5-AXIS VERIFIED OBSERVED SIGNALS',
+                                  style: GoogleFonts.fredoka(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildProfileRow(Icons.visibility_rounded, 'Presence Score', '${profile?['presenceConsistency']?['score'] ?? 92}% (Pose Verified)'),
+                                _buildProfileRow(Icons.front_hand_rounded, 'Quiz Mastery', '${profile?['quizMastery']?['score'] ?? 86}% (Camo Quizo)'),
+                                _buildProfileRow(Icons.checklist_rounded, 'Plan Progress', '${profile?['studyPlanProgress']?['score'] ?? 78}% (Self-Managed)'),
+                                _buildProfileRow(Icons.favorite_rounded, 'Wellness Score', '${profile?['wellness']?['score'] ?? 90}% (4-7-8 Sync)'),
+                                _buildProfileRow(Icons.record_voice_over_rounded, 'Engagement', '${profile?['engagement']?['score'] ?? 88}% (On-Device Turns)'),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          NeuButton(
+                            text: 'LOGOUT OF SENSEI',
+                            icon: Icons.logout_rounded,
+                            backgroundColor: AppColors.popCoral,
+                            textColor: Colors.white,
+                            onPressed: () {
+                              ref.read(authProvider.notifier).logout();
+                              context.go('/login');
+                            },
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    NeuCard(
-                      backgroundColor: Colors.white,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'ACADEMIC PROFILE',
-                            style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildProfileRow(Icons.school_rounded, 'Department', user?.department ?? 'Computer Science'),
-                          _buildProfileRow(Icons.calendar_today_rounded, 'Semester', 'Semester ${user?.semester ?? 4}'),
-                          _buildProfileRow(Icons.visibility_rounded, 'Presence Score', '${profile?['presenceConsistency']?['score'] ?? 85}% (Verified)'),
-                          _buildProfileRow(Icons.front_hand_rounded, 'Quiz Mastery', '${profile?['quizMastery']?['score'] ?? 80}% (Observed)'),
-                          _buildProfileRow(Icons.favorite_rounded, 'Wellness Score', '${profile?['wellness']?['score'] ?? 90}% (4-7-8 Sync)'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    NeuButton(
-                      text: 'LOGOUT OF SENSEI',
-                      icon: Icons.logout_rounded,
-                      backgroundColor: AppColors.popCoral,
-                      textColor: Colors.white,
-                      onPressed: () {
-                        ref.read(authProvider.notifier).logout();
-                        context.go('/login');
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

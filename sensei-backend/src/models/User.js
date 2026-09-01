@@ -27,14 +27,6 @@ const userSchema = new mongoose.Schema({
     enum: ['student'],
     default: 'student'
   },
-  department: {
-    type: String,
-    default: 'Computer Science'
-  },
-  semester: {
-    type: Number,
-    default: 4
-  },
   avatar: {
     type: String,
     default: 'avatar_1'

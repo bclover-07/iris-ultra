@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/vision_service.dart';
 import '../services/sensor_service.dart';
-import '../services/api_service.dart';
 import '../models/feature_models.dart';
 
 class FocusState {

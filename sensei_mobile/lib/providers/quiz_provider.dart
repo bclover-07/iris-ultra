@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/vision_service.dart';
-import '../services/api_service.dart';
 import '../models/quiz_question.dart';
 
 class QuizState {

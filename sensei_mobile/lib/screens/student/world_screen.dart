@@ -90,7 +90,7 @@ class _WorldScreenState extends ConsumerState<WorldScreen> {
     if (name.isEmpty) return;
 
     try {
-      final response = await ApiService().post('/api/world/rooms', data: {
+      await ApiService().post('/api/world/rooms', data: {
         'name': name,
         'topic': 'General Engineering',
         'maxPlayers': 15,

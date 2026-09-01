@@ -3,8 +3,6 @@ class User {
   final String name;
   final String email;
   final String role;
-  final String department;
-  final String? studentId;
   final String? avatar;
   final int xp;
   final String debateRank;
@@ -14,9 +12,7 @@ class User {
     required this.id,
     required this.name,
     required this.email,
-    required this.role,
-    required this.department,
-    this.studentId,
+    this.role = 'student',
     this.avatar,
     this.xp = 0,
     this.debateRank = 'Unranked',
@@ -25,12 +21,10 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       role: json['role'] ?? 'student',
-      department: json['department'] ?? '',
-      studentId: json['studentId'],
       avatar: json['avatar'],
       xp: json['xp'] ?? 0,
       debateRank: json['debateRank'] ?? 'Unranked',
@@ -43,8 +37,6 @@ class User {
     'name': name,
     'email': email,
     'role': role,
-    'department': department,
-    'studentId': studentId,
     'avatar': avatar,
     'xp': xp,
     'debateRank': debateRank,
@@ -63,8 +55,6 @@ class User {
       name: name ?? this.name,
       email: email ?? this.email,
       role: role,
-      department: department,
-      studentId: studentId,
       avatar: avatar ?? this.avatar,
       xp: xp ?? this.xp,
       debateRank: debateRank ?? this.debateRank,

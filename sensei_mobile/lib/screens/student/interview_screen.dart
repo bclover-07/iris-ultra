@@ -22,7 +22,6 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> {
     'totalXPFromInterviews': 0,
   };
   List<dynamic> _sessions = [];
-  List<dynamic> _leaderboard = [];
   String? _selectedCompany;
 
   final List<Map<String, dynamic>> _companies = [

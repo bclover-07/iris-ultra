@@ -6,6 +6,7 @@ const router = Router();
 router.use(verifyAccessToken);
 
 router.post('/session', logFocusSession);
+router.post('/log', logFocusSession);
 router.get('/history', getFocusHistory);
 
 export default router;
