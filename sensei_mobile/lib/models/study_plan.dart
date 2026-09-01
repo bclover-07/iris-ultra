@@ -25,11 +25,11 @@ class StudyPlanModel {
 
   factory StudyPlanModel.fromJson(Map<String, dynamic> json) {
     return StudyPlanModel(
-      id: json['_id'] ?? '',
+      id: json['_id'] ?? json['id'] ?? '',
       title: json['title'] ?? 'Study Plan',
-      subject: json['subject'] ?? 'General',
-      durationDays: json['durationDays'] ?? 7,
-      estimatedHoursPerDay: (json['estimatedHoursPerDay'] ?? 2.5).toDouble(),
+      subject: json['subject'] ?? json['topic'] ?? 'General',
+      durationDays: json['durationDays'] ?? json['targetDays'] ?? json['totalDays'] ?? 7,
+      estimatedHoursPerDay: (json['estimatedHoursPerDay'] ?? json['hoursPerDay'] ?? 2.5).toDouble(),
       days: (json['days'] as List? ?? []).map((d) => StudyDay.fromJson(d)).toList(),
       totalTasks: json['totalTasks'] ?? 0,
       completedTasks: json['completedTasks'] ?? 0,
