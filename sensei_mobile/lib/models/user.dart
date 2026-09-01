@@ -6,6 +6,7 @@ class User {
   final String? avatar;
   final int xp;
   final String debateRank;
+  final String githubHandle;
   final Map<String, dynamic>? profile;
 
   User({
@@ -16,18 +17,20 @@ class User {
     this.avatar,
     this.xp = 0,
     this.debateRank = 'Unranked',
+    this.githubHandle = 'shreshta-27',
     this.profile,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['_id'] ?? json['id'] ?? '',
-      name: json['name'] ?? '',
+      name: json['name'] ?? 'Shreshta',
       email: json['email'] ?? '',
       role: json['role'] ?? 'student',
       avatar: json['avatar'],
       xp: json['xp'] ?? 0,
       debateRank: json['debateRank'] ?? 'Unranked',
+      githubHandle: json['githubHandle'] ?? 'shreshta-27',
       profile: json['profile'],
     );
   }

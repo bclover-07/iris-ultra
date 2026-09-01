@@ -14,8 +14,8 @@ class OnDeviceLlmService {
   bool _isInitialized = false;
   bool _isModelLoaded = false;
   LlmBackendType _currentBackend = LlmBackendType.npu;
-  final String _modelName = 'Gemma 3n E2B';
-  final String _runtime = 'LiteRT-LM / QNN';
+  final String _modelName = 'iQOO Gemma 3n E2B Multimodal';
+  final String _runtime = 'iQOO Hexagon NPU (QNN / LiteRT-LM)';
 
   bool get isInitialized => _isInitialized;
   bool get isModelLoaded => _isModelLoaded;

@@ -49,8 +49,8 @@ class NpuEventService extends ChangeNotifier {
 
   static const int _maxEvents = 500;
   final List<NpuEvent> _events = [];
-  String _activeEngine = 'Gemma 3n E2B';
-  String _activeRuntime = 'LiteRT-LM';
+  String _activeEngine = 'iQOO Gemma 3n E2B Multimodal';
+  String _activeRuntime = 'iQOO Hexagon NPU (LiteRT-LM)';
   NpuBackend _activeBackend = NpuBackend.npu;
 
   List<NpuEvent> get events => List.unmodifiable(_events);

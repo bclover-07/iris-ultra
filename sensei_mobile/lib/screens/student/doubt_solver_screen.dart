@@ -322,7 +322,7 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
                   style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
                 ),
                 Text(
-                  'NOTEBOOK SCANNER & DIGITIZER',
+                  'iQOO HEXAGON NPU · GEMMA 3N MULTIMODAL',
                   style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.1),
                 ),
               ],
