@@ -77,15 +77,15 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
     final theme = ref.watch(themeProvider);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               color: AppColors.popYellow,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2.5),
               boxShadow: [
                 BoxShadow(
@@ -99,7 +99,7 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : 'S',
                 style: GoogleFonts.fredoka(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppColors.brutalBlack,
                 ),
@@ -114,7 +114,7 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
                 Text(
                   'Hey, $name! 👋',
                   style: GoogleFonts.fredoka(
-                    fontSize: 17,
+                    fontSize: 19,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : AppColors.brutalBlack,
                   ),
@@ -122,10 +122,10 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
                 Text(
                   'OBSERVED SIGNALS ACTIVE · NPU LIVE',
                   style: GoogleFonts.inter(
-                    fontSize: 9,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.1,
-                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    color: isDark ? Colors.white70 : Colors.black87,
                   ),
                 ),
               ],
@@ -134,11 +134,11 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
           GestureDetector(
             onTap: () => ref.read(themeProvider.notifier).toggleTheme(),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkCard : Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2),
                 boxShadow: const [
                   BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
@@ -146,7 +146,7 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
               ),
               child: Icon(
                 theme == ThemeMode.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                size: 18,
+                size: 20,
                 color: isDark ? AppColors.popYellow : AppColors.brutalBlack,
               ),
             ),
@@ -155,17 +155,17 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
           GestureDetector(
             onTap: () => _showLogoutDialog(),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkCard : Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.popCoral, width: 2),
                 boxShadow: const [
                   BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
                 ],
               ),
-              child: const Icon(Icons.logout_rounded, size: 18, color: AppColors.popCoral),
+              child: const Icon(Icons.logout_rounded, size: 20, color: AppColors.popCoral),
             ),
           ),
         ],
@@ -180,12 +180,12 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
         border: Border(top: BorderSide(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2.5)),
       ),
       child: SizedBox(
-        height: 68,
+        height: 74,
         child: ListView.builder(
           controller: _scrollController,
           scrollDirection: Axis.horizontal,
           itemCount: _navItems.length,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           itemBuilder: (context, index) {
             final item = _navItems[index];
             final isActive = index == _currentIndex;
@@ -197,20 +197,20 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 64,
+                width: 72,
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
                   color: isActive ? AppColors.popYellow : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   border: isActive
-                      ? Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2)
+                      ? Border.all(color: isDark ? Colors.white : AppColors.brutalBlack, width: 2.5)
                       : null,
                   boxShadow: isActive
                       ? [
                           BoxShadow(
                             color: isDark ? Colors.white : AppColors.brutalBlack,
-                            offset: const Offset(2, 2),
+                            offset: const Offset(2.5, 2.5),
                             blurRadius: 0,
                           )
                         ]
@@ -221,20 +221,20 @@ class _StudentLayoutState extends ConsumerState<StudentLayout> {
                   children: [
                     Icon(
                       item.icon,
-                      size: isActive ? 20 : 18,
+                      size: isActive ? 22 : 20,
                       color: isActive
                           ? AppColors.brutalBlack
-                          : (isDark ? Colors.white54 : Colors.grey.shade500),
+                          : (isDark ? Colors.white70 : Colors.black87),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       item.label,
                       style: GoogleFonts.fredoka(
-                        fontSize: 9,
-                        fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                        fontSize: 11,
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
                         color: isActive
                             ? AppColors.brutalBlack
-                            : (isDark ? Colors.white54 : Colors.grey.shade500),
+                            : (isDark ? Colors.white70 : Colors.black87),
                       ),
                       textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,
