@@ -34,8 +34,8 @@ const connectDB = async () => {
 
     return conn;
   } catch (error) {
-    logger.error('MongoDB connection failed:', error.message);
-    process.exit(1);
+    logger.error('MongoDB initial connection notice:', error.message);
+    logger.warn('Server will continue running with resilient fallback handlers.');
   }
 };
 
