@@ -2,7 +2,7 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import User from '../src/models/User.js';
 import StudentProfile from '../src/models/StudentProfile.js';
-import QuizQuestion from '../src/models/QuizQuestion.js';
+import Quiz from '../src/models/Quiz.js';
 import StudyPlan from '../src/models/StudyPlan.js';
 
 async function seedV3() {
