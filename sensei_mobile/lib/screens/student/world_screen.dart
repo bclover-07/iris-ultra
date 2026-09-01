@@ -4,9 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/neubrutalist_widgets.dart';
-import '../../theme/animations.dart';
 import '../../services/api_service.dart';
 import '../../services/socket_service.dart';
+import '../../components/three_js_avatar_view.dart';
 
 class WorldScreen extends ConsumerStatefulWidget {
   const WorldScreen({super.key});
@@ -344,7 +344,7 @@ class _WorldScreenState extends ConsumerState<WorldScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // 3D Three.js Campus Scene Container
+          // 3D Three.js GLB Campus Scene Container
           NeuCard(
             backgroundColor: const Color(0xFF1E1E2E),
             padding: const EdgeInsets.all(14),
@@ -354,7 +354,7 @@ class _WorldScreenState extends ConsumerState<WorldScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const NeuBadge(
-                      label: 'THREE.JS 3D CANVAS · 60 FPS',
+                      label: '3D GLB CAMPUS RIG · THREE.JS',
                       backgroundColor: AppColors.popGreen,
                       isLive: true,
                     ),
@@ -364,52 +364,28 @@ class _WorldScreenState extends ConsumerState<WorldScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF12121A),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white24, width: 2),
-                  ),
-                  child: Stack(
-                    children: [
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.videogame_asset_rounded, size: 48, color: AppColors.popViolet),
-                            const SizedBox(height: 8),
-                            Text(
-                              '3D SHARED CAMPUS SCENE',
-                              style: GoogleFonts.fredoka(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1),
-                            ),
-                            Text(
-                              'WebGL Three.js canvas synced via WebSocket namespace',
-                              style: GoogleFonts.inter(fontSize: 10, color: Colors.white54),
-                            ),
-                          ],
-                        ),
+                const SizedBox(height: 12),
+                const ThreeJsAvatarView(
+                  height: 200,
+                  initialMood: 'idle',
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _roomPlayers.map((p) => Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: p['isMe'] == true ? AppColors.popYellow : Colors.white24,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.black45, width: 1.5),
                       ),
-                      Positioned(
-                        bottom: 10,
-                        left: 10,
-                        child: Row(
-                          children: _roomPlayers.map((p) => Container(
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: p['isMe'] == true ? AppColors.popYellow : Colors.white24,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '👤 ${p['username']}',
-                              style: GoogleFonts.fredoka(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
-                            ),
-                          )).toList(),
-                        ),
+                      child: Text(
+                        '👤 ${p['username']}',
+                        style: GoogleFonts.fredoka(fontSize: 11, fontWeight: FontWeight.bold, color: p['isMe'] == true ? AppColors.brutalBlack : Colors.white),
                       ),
-                    ],
+                    )).toList(),
                   ),
                 ),
               ],

@@ -69,5 +69,6 @@ flutter:
   assets:
     - assets/images/
     - assets/web/
+    - assets/models/
 
 
