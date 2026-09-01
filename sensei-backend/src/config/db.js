@@ -10,6 +10,8 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()]
 });
 
+mongoose.set('bufferCommands', false);
+
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
