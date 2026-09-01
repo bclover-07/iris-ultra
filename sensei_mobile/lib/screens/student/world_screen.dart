@@ -183,7 +183,7 @@ class _WorldScreenState extends ConsumerState<WorldScreen> {
               if (_joinedRoomId != null) {
                 _leaveRoom();
               } else {
-                context.pop();
+                context.canPop() ? context.pop() : context.go('/student');
               }
             },
             child: Container(

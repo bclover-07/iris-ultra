@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/neubrutalist_widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../services/api_service.dart';
@@ -184,7 +185,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () => context.canPop() ? context.pop() : context.go('/student'),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(

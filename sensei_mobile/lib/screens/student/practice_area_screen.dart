@@ -71,7 +71,7 @@ class PracticeAreaScreen extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () => context.canPop() ? context.pop() : context.go('/student'),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(

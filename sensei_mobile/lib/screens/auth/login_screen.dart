@@ -210,20 +210,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Demo Account Quick Fill
+              const SizedBox(height: 16),
+
+              // 1-Click Mock Demo Login Account Card
               NeuCard(
-                backgroundColor: AppColors.popViolet.withValues(alpha: 0.15),
+                backgroundColor: AppColors.popYellow,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'DEMO STUDENT PROFILE',
-                      style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+                    Row(
+                      children: [
+                        const Icon(Icons.stars_rounded, color: AppColors.brutalBlack, size: 20),
+                        const SizedBox(width: 6),
+                        Text(
+                          '1-CLICK MOCK DEMO ACCOUNT',
+                          style: GoogleFonts.fredoka(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      'Alex Rivera • CSE 3rd Year • iQOO 15 (Snapdragon 8 Elite)',
+                      'Bypass login and enter student portal instantly with pre-loaded mock student signals & NPU status.',
                       style: GoogleFonts.inter(fontSize: 11, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    NeuButton(
+                      text: '⚡ ENTER DEMO PORTAL INSTANTLY',
+                      backgroundColor: Colors.white,
+                      onPressed: () async {
+                        await ref.read(authProvider.notifier).mockLogin(
+                          name: 'Shreshta Junjuru',
+                          email: 'priya.patel.it@sensei.edu',
+                        );
+                        if (mounted) context.go('/student');
+                      },
                     ),
                   ],
                 ),
