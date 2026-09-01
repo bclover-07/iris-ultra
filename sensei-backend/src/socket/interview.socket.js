@@ -1,7 +1,6 @@
 import InterviewSession from '../models/InterviewSession.js';
 import InterviewReport from '../models/InterviewReport.js';
 import User from '../models/User.js';
-import Student from '../models/Student.js';
 import { getInterviewGraph, resumeContextLoader } from '../agents/virtualInterview.agent.js';
 import { generatePDFReport } from '../utils/pdfReportGenerator.js';
 

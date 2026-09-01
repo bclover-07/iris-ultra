@@ -1,70 +1,57 @@
 import Leaderboard from '../models/Leaderboard.js';
-import Insight from '../models/Insight.js';
-import Student from '../models/Student.js';
+import StudentProfile from '../models/StudentProfile.js';
 import User from '../models/User.js';
-import { calculateLeaderboardScore } from '../utils/badgeEngine.js';
 import getIO from '../config/socket.js';
 import NodeCache from 'node-cache';
 
 const cache = new NodeCache({ stdTTL: 30 });
 
-export const recalculateLeaderboard = async (classId) => {
-  const students = await Student.find({ classId });
+export const recalculateLeaderboard = async () => {
+  const profiles = await StudentProfile.find().sort({ xp: -1 }).limit(100);
   
   const entries = [];
-  for (const student of students) {
-    const user = await User.findById(student.userId);
+  for (let i = 0; i < profiles.length; i++) {
+    const profile = profiles[i];
+    const user = await User.findById(profile.userId);
     if (!user) continue;
 
     entries.push({
-      studentId: student.userId,
+      studentId: profile.userId,
       name: user.name,
-      score: student.xp || 0,
-      xp: student.xp || 0,
-      badges: student.badges || [],
-      rank: 0,
+      score: profile.xp || 250,
+      xp: profile.xp || 250,
+      streak: profile.streak || 1,
+      rank: i + 1,
       change: 0
     });
   }
 
-  entries.sort((a, b) => b.xp - a.xp);
-  
-  const existing = await Leaderboard.findOne({ classId });
-  const previousRanks = {};
-  if (existing) {
-    for (const entry of existing.entries) {
-      previousRanks[entry.studentId.toString()] = entry.rank;
-    }
-  }
-
-  entries.forEach((entry, index) => {
-    entry.rank = index + 1;
-    const prevRank = previousRanks[entry.studentId.toString()];
-    entry.change = prevRank ? prevRank - entry.rank : 0;
-  });
-
   const leaderboard = await Leaderboard.findOneAndUpdate(
-    { classId },
-    { classId, entries, updatedAt: new Date() },
+    {},
+    { entries, updatedAt: new Date() },
     { upsert: true, new: true }
   );
 
-  cache.del(`leaderboard:${classId}`);
+  cache.del('global_leaderboard');
 
   try {
     const io = getIO();
-    io.of('/student').to(`class:${classId}`).emit('leaderboard:update', { entries, classId });
+    io.of('/student').emit('leaderboard:update', { entries });
   } catch (e) {}
 
   return leaderboard;
 };
 
-export const getClassLeaderboard = async (classId) => {
-  const cacheKey = `leaderboard:${classId}`;
+export const getClassLeaderboard = async () => {
+  const cacheKey = 'global_leaderboard';
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  const leaderboard = await Leaderboard.findOne({ classId });
+  let leaderboard = await Leaderboard.findOne();
+  if (!leaderboard) {
+    leaderboard = await recalculateLeaderboard();
+  }
+  
   if (leaderboard) {
     cache.set(cacheKey, leaderboard);
   }

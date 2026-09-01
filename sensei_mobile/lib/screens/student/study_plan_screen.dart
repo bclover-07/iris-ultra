@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
 import '../../theme/neubrutalist_widgets.dart';
 import '../../theme/app_colors.dart';
-import '../../config/env.dart';
+import '../../theme/animations.dart';
+import '../../models/study_plan.dart';
 
 class StudyPlanScreen extends ConsumerStatefulWidget {
   const StudyPlanScreen({super.key});
@@ -15,24 +16,19 @@ class StudyPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _StudyPlanScreenState extends ConsumerState<StudyPlanScreen> {
-  int _activeTabIndex = 0; // 0 = Generator, 1 = History
-  
-  // Generator State
-  String _planType = 'normal'; // 'normal' or 'advanced'
   final _topicController = TextEditingController();
   final _videoUrlController = TextEditingController();
-  bool _isGenerating = false;
-  Map<String, dynamic>? _currentPlan;
+  int _targetDays = 7;
+  double _hoursPerDay = 2.5;
 
-  // History State
-  bool _isHistoryLoading = false;
-  List<dynamic> _historyPlans = [];
-  Map<String, dynamic>? _stats;
+  bool _isGenerating = false;
+  bool _isLoadingActive = true;
+  StudyPlanModel? _activePlan;
 
   @override
   void initState() {
     super.initState();
-    _fetchHistory();
+    _fetchActivePlan();
   }
 
   @override
@@ -42,375 +38,336 @@ class _StudyPlanScreenState extends ConsumerState<StudyPlanScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchHistory() async {
-    setState(() => _isHistoryLoading = true);
+  Future<void> _fetchActivePlan() async {
+    setState(() => _isLoadingActive = true);
     try {
-      final responses = await Future.wait([
-        ApiService().get('/api/study-plan/my-plans?limit=50').catchError((_) => Response(requestOptions: RequestOptions(path: ''), data: {'plans': []})),
-        ApiService().get('/api/study-plan/history/stats').catchError((_) => Response(requestOptions: RequestOptions(path: ''), data: null)),
-      ]);
-
-      if (mounted) {
+      final response = await ApiService().get('/api/study-plan/active');
+      if (response.data != null) {
         setState(() {
-          _historyPlans = responses[0].data['plans'] ?? [];
-          _stats = responses[1].data;
-          _isHistoryLoading = false;
+          _activePlan = StudyPlanModel.fromJson(response.data);
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isHistoryLoading = false);
-      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoadingActive = false);
     }
   }
 
   Future<void> _generatePlan() async {
-    if (_topicController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a topic')));
+    final topic = _topicController.text.trim();
+    if (topic.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a syllabus topic or subject!')),
+      );
       return;
     }
 
+    setState(() => _isGenerating = true);
+
+    try {
+      final response = await ApiService().post('/api/study-plan/generate', data: {
+        'focusSubject': topic,
+        'targetDays': _targetDays,
+        'hoursPerDay': _hoursPerDay,
+        'youtubeUrl': _videoUrlController.text.trim(),
+        'syllabusText': topic,
+      });
+
+      setState(() {
+        _activePlan = StudyPlanModel.fromJson(response.data);
+      });
+
+      _topicController.clear();
+      _videoUrlController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Plan generation failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isGenerating = false);
+    }
+  }
+
+  Future<void> _toggleTask(int dayNumber, int taskIndex) async {
+    if (_activePlan == null) return;
+
+    final day = _activePlan!.days.firstWhere((d) => d.dayNumber == dayNumber);
+    final task = day.tasks[taskIndex];
+
     setState(() {
-      _isGenerating = true;
-      _currentPlan = null;
+      task.completed = !task.completed;
     });
 
     try {
-      final response = await ApiService().post(
-        '/api/study-plan/generate',
-        data: {
-          'planType': _planType,
-          'mode': 'topic',
-          'topic': _topicController.text.trim(),
-          if (_planType == 'advanced') 'videoUrl': _videoUrlController.text.trim(),
-        },
-      );
-
-      setState(() {
-        _currentPlan = response.data;
+      await ApiService().patch('/api/study-plan/toggle-task', data: {
+        'planId': _activePlan!.id,
+        'dayNumber': dayNumber,
+        'taskIndex': taskIndex,
       });
-      _fetchHistory();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to generate plan')));
-    } finally {
-      setState(() {
-        _isGenerating = false;
-      });
-    }
-  }
-
-  Widget _buildGeneratorTab() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (_currentPlan != null) {
-      return _buildPlanDetails(_currentPlan!);
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: ComicCard(
-                  onTap: () => setState(() => _planType = 'normal'),
-                  backgroundColor: _planType == 'normal' ? AppColors.senseiGreen : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: Text('Standard Plan', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: _planType == 'normal' ? Colors.black : (isDark ? Colors.white : Colors.black))),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ComicCard(
-                  onTap: () => setState(() => _planType = 'advanced'),
-                  backgroundColor: _planType == 'advanced' ? AppColors.senseiPurple : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: Text('Advanced Plan', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: _planType == 'advanced' ? Colors.white : (isDark ? Colors.white : Colors.black))),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          BrutalistCard(
-            backgroundColor: _planType == 'advanced' ? AppColors.senseiPurple.withValues(alpha: 0.1) : AppColors.senseiYellow.withValues(alpha: 0.1),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('What do you want to master?', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, fontSize: 18)),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _topicController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g., Quantum Physics, React Native',
-                    filled: true,
-                    fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2)),
-                  ),
-                ),
-                if (_planType == 'advanced') ...[
-                  const SizedBox(height: 16),
-                  Text('Include Video Context (Optional)', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, fontSize: 18)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _videoUrlController,
-                    decoration: InputDecoration(
-                      hintText: 'Paste a YouTube URL...',
-                      filled: true,
-                      fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2)),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                ComicCard(
-                  onTap: _isGenerating ? null : _generatePlan,
-                  backgroundColor: AppColors.brutalBlack,
-                  child: Center(
-                    child: _isGenerating
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text('GENERATE AWESOME PLAN', style: GoogleFonts.fredoka(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlanDetails(Map<String, dynamic> plan) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dailySessions = plan['dailySessions'] as List<dynamic>? ?? [];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => setState(() => _currentPlan = null),
-              ),
-              Expanded(
-                child: Text(
-                  plan['title'] ?? 'Study Plan',
-                  style: GoogleFonts.fredoka(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text('Action Plan', style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          ...dailySessions.map((day) {
-            final isCompleted = day['completed'] == true;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: BrutalistCard(
-                backgroundColor: isCompleted ? AppColors.senseiGreen.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Day ${day['day']}', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, fontSize: 18)),
-                        if (isCompleted)
-                          const Icon(Icons.check_circle, color: AppColors.senseiGreen)
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: (day['topics'] as List<dynamic>? ?? []).map((t) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.brutalBlack),
-                          borderRadius: BorderRadius.circular(8),
-                          color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                        ),
-                        child: Text(t.toString(), style: GoogleFonts.fredoka(fontSize: 12)),
-                      )).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryTab() {
-    if (_isHistoryLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_historyPlans.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.history, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text('No Study Plans Yet', style: GoogleFonts.fredoka(fontSize: 20, color: Colors.grey)),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _historyPlans.length,
-      itemBuilder: (context, index) {
-        final plan = _historyPlans[index];
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: BrutalistCard(
-            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-            onTap: () async {
-              setState(() => _isHistoryLoading = true);
-              try {
-                final response = await ApiService().get('/api/study-plan/${plan['planId'] ?? plan['_id']}');
-                if (mounted) {
-                  setState(() {
-                    _currentPlan = response.data;
-                    _activeTabIndex = 0;
-                    _isHistoryLoading = false;
-                  });
-                }
-              } catch (e) {
-                if (mounted) {
-                  setState(() => _isHistoryLoading = false);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Failed to load plan details')),
-                  );
-                }
-              }
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: plan['planType'] == 'advanced' ? AppColors.senseiPurple.withValues(alpha: 0.2) : AppColors.senseiGreen.withValues(alpha: 0.2),
-                        border: Border.all(color: AppColors.brutalBlack),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        (plan['planType'] ?? 'Standard').toString().toUpperCase(),
-                        style: GoogleFonts.fredoka(fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () {
-                        // Normally we would call DELETE /api/study-plan/:id
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delete not implemented yet')));
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  plan['title'] ?? 'Untitled Plan',
-                  style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Text('Progress: '),
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: (plan['progress'] ?? 0) / 100,
-                        backgroundColor: Colors.grey.shade300,
-                        color: AppColors.senseiGreen,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('${plan['progress'] ?? 0}%', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF050508) : const Color(0xFFFEF9C3),
-      appBar: AppBar(
-        title: Text('STUDY PLANS 📅', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _activeTabIndex = 0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _activeTabIndex == 0 ? AppColors.senseiYellow : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                        border: Border.all(color: AppColors.brutalBlack, width: 2),
-                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                      ),
-                      child: Center(child: Text('Generator', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: _activeTabIndex == 0 ? Colors.black : (isDark ? Colors.white : Colors.black)))),
-                    ),
-                  ),
+      backgroundColor: AppColors.creamBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildGenerateFormCard(),
+                    const SizedBox(height: 20),
+                    if (_isLoadingActive)
+                      const Center(child: CircularProgressIndicator(color: AppColors.brutalBlack))
+                    else if (_activePlan != null)
+                      _buildActivePlanTimeline(_activePlan!),
+                  ],
                 ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _activeTabIndex = 1),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _activeTabIndex == 1 ? AppColors.senseiPurple : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                        border: Border.all(color: AppColors.brutalBlack, width: 2),
-                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-                      ),
-                      child: Center(child: Text('My Plans', style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: _activeTabIndex == 1 ? Colors.white : (isDark ? Colors.white : Colors.black)))),
-                    ),
-                  ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: AppColors.creamBg,
+        border: Border(bottom: BorderSide(color: AppColors.brutalBlack, width: 2.5)),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.creamCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.brutalBlack, width: 2.5),
+                boxShadow: const [
+                  BoxShadow(color: AppColors.brutalBlack, offset: Offset(2, 2), blurRadius: 0),
+                ],
+              ),
+              child: const Icon(Icons.arrow_back_rounded, color: AppColors.brutalBlack, size: 20),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'STUDY PLAN SYNTHESIZER',
+                  style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+                ),
+                Text(
+                  'AI CURRICULUM & CHECKLIST GENERATOR §6.3',
+                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54, letterSpacing: 1.1),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: _activeTabIndex == 0 ? _buildGeneratorTab() : _buildHistoryTab(),
+          const NeuBadge(
+            label: 'CLOUD SYNTH',
+            backgroundColor: AppColors.popBlue,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGenerateFormCard() {
+    return NeuCard(
+      backgroundColor: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'SYNTHESIZE NEW PLAN',
+            style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _topicController,
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+            decoration: InputDecoration(
+              hintText: 'Enter syllabus topic (e.g. Distributed Systems)',
+              hintStyle: GoogleFonts.inter(color: Colors.black38),
+              filled: true,
+              fillColor: AppColors.creamBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _videoUrlController,
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+            decoration: InputDecoration(
+              hintText: 'Optional: Paste YouTube lecture / playlist URL',
+              hintStyle: GoogleFonts.inter(color: Colors.black38),
+              filled: true,
+              fillColor: AppColors.creamBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.brutalBlack, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Target Days: $_targetDays', style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Slider(
+                      value: _targetDays.toDouble(),
+                      min: 3,
+                      max: 30,
+                      divisions: 27,
+                      activeColor: AppColors.popViolet,
+                      onChanged: (v) => setState(() => _targetDays = v.round()),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Hours/Day: ${_hoursPerDay.toStringAsFixed(1)}h', style: GoogleFonts.fredoka(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Slider(
+                      value: _hoursPerDay,
+                      min: 1.0,
+                      max: 8.0,
+                      divisions: 14,
+                      activeColor: AppColors.popYellow,
+                      onChanged: (v) => setState(() => _hoursPerDay = v),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          NeuButton(
+            text: _isGenerating ? 'SYNTHESIZING CURRICULUM...' : 'GENERATE STUDY PLAN →',
+            icon: Icons.auto_awesome_rounded,
+            backgroundColor: AppColors.popYellow,
+            isLoading: _isGenerating,
+            onPressed: _generatePlan,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivePlanTimeline(StudyPlanModel plan) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'ACTIVE PLAN: ${plan.title.toUpperCase()}',
+              style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.brutalBlack, letterSpacing: 1),
+            ),
+            NeuBadge(
+              label: '${plan.progressPercent.round()}% COMPLETED',
+              backgroundColor: AppColors.popGreen,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        NeuProgressBar(percentage: plan.progressPercent, fillColor: AppColors.popGreen),
+        const SizedBox(height: 16),
+        ...plan.days.map((day) => _buildDayCard(day)),
+      ],
+    );
+  }
+
+  Widget _buildDayCard(StudyDay day) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: NeuCard(
+        backgroundColor: Colors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                NeuBadge(
+                  label: 'DAY ${day.dayNumber}',
+                  backgroundColor: AppColors.popPink,
+                ),
+                Text(
+                  day.topic,
+                  style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.brutalBlack),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...day.tasks.asMap().entries.map((taskEntry) {
+              final taskIndex = taskEntry.key;
+              final task = taskEntry.value;
+
+              return GestureDetector(
+                onTap: () => _toggleTask(day.dayNumber, taskIndex),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: task.completed ? AppColors.popGreen : Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.brutalBlack, width: 2),
+                        ),
+                        child: task.completed
+                            ? const Icon(Icons.check_rounded, size: 16, color: AppColors.brutalBlack)
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: task.completed ? Colors.black38 : AppColors.brutalBlack,
+                            decoration: task.completed ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${task.durationMinutes}m',
+                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black45),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }

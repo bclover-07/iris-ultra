@@ -1,14 +1,14 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
-import Student from '../models/Student.js';
+import StudentProfile from '../models/StudentProfile.js';
 
 const generateAccessToken = (userId, role) => {
-  return jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '15m' });
+  return jwt.sign({ userId, role }, process.env.JWT_SECRET || 'sensei_ultra_jwt_secret', { expiresIn: '15m' });
 };
 
 const generateRefreshToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET || 'sensei_ultra_refresh_secret', { expiresIn: '7d' });
 };
 
 const setCookieOptions = () => {
@@ -18,33 +18,52 @@ const setCookieOptions = () => {
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
-
     domain: process.env.COOKIE_DOMAIN === 'localhost' ? undefined : process.env.COOKIE_DOMAIN
   };
 };
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, department, studentId, semester, subjects } = req.validatedBody;
+    const { name, email, password, department, semester } = req.body || req.validatedBody;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered', code: 400 });
     }
 
-    if (role === 'student' && studentId) {
-      const existingStudentId = await User.findOne({ studentId });
-      if (existingStudentId) {
-        return res.status(400).json({ error: 'Student ID already registered', code: 400 });
-      }
-    }
+    const userDepartment = department || 'Computer Science';
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: 'student',
+      department: userDepartment,
+      semester: semester || 4
+    });
 
-    const userDepartment = department || 'CSE';
-    const user = await User.create({ name, email, password, role: 'student', department: userDepartment, studentId });
+    await StudentProfile.create({
+      userId: user._id,
+      presenceConsistency: { score: 85, totalVerifiedMinutes: 0, verifiedSessionsCount: 0, streakDays: 1 },
+      quizMastery: { score: 80, totalAnswered: 0, totalCorrect: 0 },
+      studyPlanProgress: { score: 75, completedTasks: 0, totalTasks: 0 },
+      wellness: { score: 90, breathingComplianceAvg: 90, ambientScoreAvg: 88, recentSentiment: 'positive' },
+      engagement: { score: 85, mentorVoiceTurns: 0, doubtSessionsCount: 0, practiceSessionsCount: 0 },
+      riskModel: { riskTier: 'low', riskScore: 10, topContributingFactors: ['New student profile created'] },
+      xp: 250,
+      level: 1,
+      streak: 1
+    });
 
-    await Student.create({ userId: user._id, semester: semester || 1 });
+    const accessToken = generateAccessToken(user._id, 'student');
+    const refreshToken = generateRefreshToken(user._id);
 
-    res.status(201).json({ message: 'Registration successful', user: { _id: user._id, name, email, role: 'student', department: userDepartment } });
+    res.cookie('refreshToken', refreshToken, setCookieOptions());
+    res.status(201).json({
+      message: 'Registration successful',
+      accessToken,
+      refreshToken,
+      user: { _id: user._id, name: user.name, email: user.email, role: 'student', department: userDepartment }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message, code: 500 });
   }
