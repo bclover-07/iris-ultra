@@ -239,8 +239,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       backgroundColor: Colors.white,
                       onPressed: () async {
                         await ref.read(authProvider.notifier).mockLogin(
-                          name: 'Shreshta Junjuru',
-                          email: 'priya.patel.it@sensei.edu',
+                          name: 'shreshta-27',
+                          email: 'shreshta27@sensei.edu',
                         );
                         if (mounted) context.go('/student');
                       },

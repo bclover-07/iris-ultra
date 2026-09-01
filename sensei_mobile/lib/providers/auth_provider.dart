@@ -66,8 +66,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       // Automatic Fallback to Standalone Mock Account if network or server error occurs
       return await mockLogin(
-        email: email.isNotEmpty ? email : 'priya.patel.it@sensei.edu',
-        name: email.contains('aarav') ? 'Aarav Sharma' : 'Shreshta Junjuru',
+        email: email.isNotEmpty ? email : 'shreshta27@sensei.edu',
+        name: email.contains('aarav') ? 'Aarav Sharma' : 'shreshta-27',
       );
     }
   }
@@ -77,8 +77,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await Future.delayed(const Duration(milliseconds: 300));
     final mockUser = User(
       id: 'mock_student_66d0001',
-      name: name ?? 'Shreshta Junjuru',
-      email: email ?? 'priya.patel.it@sensei.edu',
+      name: name ?? 'shreshta-27',
+      email: email ?? 'shreshta27@sensei.edu',
       role: 'student',
       avatar: 'avatar_1',
       xp: 580,
