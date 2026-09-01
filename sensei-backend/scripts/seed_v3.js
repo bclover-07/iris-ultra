@@ -82,49 +82,50 @@ async function seedV3() {
     }
 
     // Seed Camo Quizo Questions
-    const count = await QuizQuestion.countDocuments();
-    if (count < 5) {
-      const questions = [
-        {
-          subject: 'Operating Systems',
-          difficulty: 'Medium',
-          question: 'Which scheduling algorithm is non-preemptive and selects the process with the smallest execution time?',
-          options: ['Round Robin (RR)', 'Shortest Job First (SJF)', 'Priority Scheduling', 'First-Come, First-Served (FCFS)'],
-          correctIndex: 1,
-          explanation: 'Shortest Job First (SJF) selects the waiting process with the smallest execution burst time.',
-          topic: 'Process Scheduling'
-        },
-        {
-          subject: 'Algorithms',
-          difficulty: 'Hard',
-          question: 'What is the tightest upper bound time complexity of finding the Median-of-Medians in an unsorted array?',
-          options: ['O(N log N)', 'O(N^2)', 'O(N)', 'O(log N)'],
-          correctIndex: 2,
-          explanation: 'Median-of-Medians runs in strictly deterministic linear time O(N).',
-          topic: 'Order Statistics'
-        },
-        {
-          subject: 'Deep Learning',
-          difficulty: 'Medium',
-          question: 'Which hardware component performs matrix multiplication with highest energy efficiency on mobile devices?',
-          options: ['Vector CPU', 'Adreno GPU', 'Hexagon NPU / Tensor Core', 'DRAM Controller'],
-          correctIndex: 2,
-          explanation: 'Dedicated Neural Processing Units (NPUs) feature specialized systolic arrays tailored for INT8/FP16 tensor ops.',
-          topic: 'Hardware Acceleration'
-        },
-        {
-          subject: 'Computer Networks',
-          difficulty: 'Easy',
-          question: 'Which layer of the OSI model does the Transport Layer Security (TLS) protocol operate just above?',
-          options: ['Application Layer', 'Transport Layer (TCP)', 'Network Layer (IP)', 'Physical Layer'],
-          correctIndex: 1,
-          explanation: 'TLS operates right above the Transport layer (TCP) to encrypt application payload streams.',
-          topic: 'Network Security'
-        }
-      ];
-
-      await QuizQuestion.insertMany(questions);
-      console.log(`Seeded ${questions.length} Camo Quizo questions.`);
+    const count = await Quiz.countDocuments();
+    if (count === 0) {
+      await Quiz.create({
+        studentId: user._id,
+        mode: 'camo',
+        topic: 'Computer Science & AI Systems',
+        difficulty: 'intermediate',
+        totalQuestions: 4,
+        questions: [
+          {
+            id: 'q1',
+            question: 'Which scheduling algorithm is non-preemptive and selects the process with the smallest execution time?',
+            options: ['Round Robin (RR)', 'Shortest Job First (SJF)', 'Priority Scheduling', 'First-Come, First-Served (FCFS)'],
+            correctAnswer: 'Shortest Job First (SJF)',
+            explanation: 'Shortest Job First (SJF) selects the waiting process with the smallest execution burst time.',
+            topic: 'Operating Systems'
+          },
+          {
+            id: 'q2',
+            question: 'What is the tightest upper bound time complexity of finding the Median-of-Medians in an unsorted array?',
+            options: ['O(N log N)', 'O(N^2)', 'O(N)', 'O(log N)'],
+            correctAnswer: 'O(N)',
+            explanation: 'Median-of-Medians runs in strictly deterministic linear time O(N).',
+            topic: 'Algorithms'
+          },
+          {
+            id: 'q3',
+            question: 'Which hardware component performs matrix multiplication with highest energy efficiency on mobile devices?',
+            options: ['Vector CPU', 'Adreno GPU', 'Hexagon NPU / Tensor Core', 'DRAM Controller'],
+            correctAnswer: 'Hexagon NPU / Tensor Core',
+            explanation: 'Dedicated Neural Processing Units (NPUs) feature specialized systolic arrays tailored for INT8/FP16 tensor ops.',
+            topic: 'Deep Learning'
+          },
+          {
+            id: 'q4',
+            question: 'Which layer of the OSI model does the Transport Layer Security (TLS) protocol operate just above?',
+            options: ['Application Layer', 'Transport Layer (TCP)', 'Network Layer (IP)', 'Physical Layer'],
+            correctAnswer: 'Transport Layer (TCP)',
+            explanation: 'TLS operates right above the Transport layer (TCP) to encrypt application payload streams.',
+            topic: 'Computer Networks'
+          }
+        ]
+      });
+      console.log('Seeded Camo Quizo bank.');
     }
 
     console.log('✅ Seed v3 completed successfully!');
