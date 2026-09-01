@@ -22,6 +22,7 @@ export const verifyAccessToken = async (req, res, next) => {
         user = await User.findById(decoded.userId);
       } catch (_) {}
     }
+    }
 
     req.user = {
       userId: user ? user._id : decoded.userId,

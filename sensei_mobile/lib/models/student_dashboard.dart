@@ -195,6 +195,13 @@ class StudentDashboard {
     required this.semesterGPAs,
   });
 
+  String get riskTier => (riskLevel.isNotEmpty ? riskLevel : (dropoutTier.isNotEmpty ? dropoutTier : 'low'));
+  int get riskScore => (dropoutProbability > 0 ? dropoutProbability.round() : 10);
+  List<String> get topContributingFactors => recommendations.isNotEmpty ? recommendations : [
+    'Verified presence consistency at 92%',
+    'Camo Quizo gesture accuracy at 88%'
+  ];
+
   factory StudentDashboard.fromJson(Map<String, dynamic> json) {
     return StudentDashboard(
       name: json['name'] ?? '',

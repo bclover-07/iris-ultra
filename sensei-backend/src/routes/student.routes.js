@@ -7,6 +7,7 @@ router.use(verifyAccessToken);
 
 router.get('/dashboard', getDashboard);
 router.post('/sync-verified-signal', syncVerifiedSignal);
+router.post('/profile/sync', syncVerifiedSignal);
 router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
 

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import api from '@/lib/axios';
 import {
   Home, Brain, BookOpen, MessageCircle, FileText, AlertTriangle,
   Trophy, HelpCircle, User, Bell, LogOut, ChevronLeft, ChevronRight, ArrowRight, ChevronDown, ArrowLeft
@@ -35,8 +36,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, login } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollHint, setShowScrollHint] = useState(true);
@@ -49,16 +52,65 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   };
 
   useEffect(() => {
-    if (!user || user.role !== 'student') {
-      router.push('/login');
-    }
-  }, [user, router]);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    let isSubscribed = true;
+
+    const checkSession = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (user && user.role === 'student') {
+        if (isSubscribed) setCheckingAuth(false);
+        return;
+      }
+
+      if (token) {
+        try {
+          const { data } = await api.get('/api/auth/me');
+          if (data?.user && isSubscribed) {
+            login(data.user, token);
+            setCheckingAuth(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Session verification error:', err);
+        }
+      }
+
+      if (isSubscribed) {
+        logout();
+        router.push('/login');
+      }
+    };
+
+    checkSession();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [mounted, user, router, login, logout]);
 
   const isWorldRoom = pathname.startsWith('/student/world/');
   const isInterviewSession = /^\/student\/interview\/iv_/.test(pathname);
   const isStudentRoot = pathname === '/student';
 
-  if (!user) return null;
+  if (!mounted || checkingAuth || !user) {
+    return (
+      <div className="min-h-screen bg-[#FAF6EE] dark:bg-slate-950 flex flex-col items-center justify-center gap-4 font-fredoka">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+          className="w-14 h-14 border-4 border-purple-300 border-t-purple-600 rounded-full"
+        />
+        <p className="text-sm font-bold text-gray-600 dark:text-slate-400 uppercase tracking-wider font-mono">
+          Authenticating Student Cockpit...
+        </p>
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     logout();
