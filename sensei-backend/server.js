@@ -110,12 +110,15 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    await connectDB();
     configureCloudinary();
 
     httpServer.listen(PORT, () => {
       logger.info(`SENSEI Ultra Backend running on port ${PORT}`);
       logger.info(`Student-Only & Local-NPU Architecture Ready`);
+    });
+
+    connectDB().catch(err => {
+      logger.warn(`Background DB connection notice: ${err.message}`);
     });
   } catch (error) {
     logger.error(`Server startup failed: ${error.message}`);
