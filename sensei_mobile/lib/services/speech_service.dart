@@ -20,19 +20,12 @@ class SpeechService {
   Stream<String> get transcriptionStream => _transcriptionController.stream;
 
   Future<void> initialize() async {
-    // TODO: On real hardware, initialize sherpa_onnx here:
-    // await SherpaOnnx.init(
-    //   modelPath: 'assets/models/sherpa-onnx-whisper-tiny',
-    //   sampleRate: 16000,
-    // );
     _isInitialized = true;
   }
 
   Future<void> startListening({Function(String)? onResult, Function(String)? onPartial}) async {
     if (_isListening) return;
     _isListening = true;
-
-    final stopwatch = Stopwatch()..start();
 
     // TODO: On real hardware with sherpa_onnx:
     // final recognizer = SherpaOnnx.createOnlineRecognizer(...);

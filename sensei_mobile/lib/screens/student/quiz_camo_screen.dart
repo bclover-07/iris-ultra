@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/neubrutalist_widgets.dart';
-import '../../theme/animations.dart';
 import '../../providers/quiz_provider.dart';
 import '../../models/quiz_question.dart';
 import '../../services/api_service.dart';
@@ -27,11 +26,15 @@ class _QuizCamoScreenState extends ConsumerState<QuizCamoScreen> {
 
   Future<void> _loadQuestions() async {
     try {
-      final response = await ApiService().get('/api/quiz/all');
-      if (response.data is List && (response.data as List).isNotEmpty) {
-        final questions = (response.data as List)
-            .map((q) => QuizQuestion.fromJson(q))
-            .toList();
+      final response = await ApiService().get('/api/quiz/bank');
+      final rawList = response.data is List
+          ? (response.data as List)
+          : (response.data is Map && response.data['questions'] is List
+              ? (response.data['questions'] as List)
+              : null);
+
+      if (rawList != null && rawList.isNotEmpty) {
+        final questions = rawList.map((q) => QuizQuestion.fromJson(q)).toList();
         ref.read(quizProvider.notifier).loadQuestions(questions);
       } else {
         _loadDefaultQuestions();

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/app_theme.dart';
 
 class _NavItem {
   final String label;

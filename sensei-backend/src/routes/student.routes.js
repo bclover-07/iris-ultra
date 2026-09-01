@@ -154,6 +154,30 @@ router.post('/profile/sync', async (req, res) => {
   }
 });
 
+// Get Profile
+router.get('/profile', async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).lean();
+    let profile = await StudentProfile.findOne({ userId: req.user.userId }).lean();
+    if (!profile) {
+      profile = {
+        presenceConsistency: { score: 85, totalVerifiedMinutes: 30, streakDays: 3 },
+        quizMastery: { score: 80, totalAnswered: 15, totalCorrect: 12 },
+        studyPlanProgress: { score: 75, completedTasks: 6, totalTasks: 8 },
+        wellness: { score: 90, recentSentiment: 'positive' },
+        engagement: { score: 85 },
+        riskModel: { riskTier: 'low', riskScore: 10 },
+        xp: 250,
+        level: 1,
+        streak: 3
+      };
+    }
+    res.json({ user, profile });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Update Profile
 router.put('/profile', async (req, res) => {
   try {

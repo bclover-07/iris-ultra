@@ -5,6 +5,7 @@ import { getQuizBank, submitQuizAttempt, getQuizHistory } from '../controllers/q
 const router = Router();
 router.use(verifyAccessToken);
 
+router.get('/all', getQuizBank);
 router.get('/bank/:topic?', getQuizBank);
 router.post('/attempt', submitQuizAttempt);
 router.get('/history', getQuizHistory);

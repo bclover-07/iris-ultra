@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
 import '../../services/vision_service.dart';
 import '../../services/speech_service.dart';
+import '../../services/on_device_llm_service.dart';
 import '../../theme/neubrutalist_widgets.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/animations.dart';
 import '../../models/feature_models.dart';
 import '../../providers/doubt_provider.dart';
 
@@ -70,14 +70,16 @@ class _DoubtSolverScreenState extends ConsumerState<DoubtSolverScreen> {
         id: 'doubt_${DateTime.now().millisecondsSinceEpoch}',
         question: questionText,
         subject: npuAnalysis['subject'] ?? 'Computer Science',
+        inputMode: doubtState.inputMode,
         difficulty: npuAnalysis['difficulty'] ?? 'Medium',
+        summary: 'Gemma on Hexagon NPU analyzed this problem on-device.',
         steps: hints.asMap().entries.map((e) => DoubtStep(
           stepNumber: e.key + 1,
           title: 'NPU Step ${e.key + 1}',
           explanation: e.value,
-          formula: e.key == 0 ? questionText : null,
         )).toList(),
-        voiceNarrationText: 'Gemma on Hexagon NPU analyzed this problem. Here is your step-by-step resolution.',
+        finalAnswer: 'Resolution generated via on-device NPU invariant analysis.',
+        keyTakeaway: 'Always check base cases and boundary constraints.',
       );
 
       ref.read(doubtProvider.notifier).setSolution(localSolution);

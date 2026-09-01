@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/neubrutalist_widgets.dart';
-import '../../theme/animations.dart';
 import '../../providers/focus_provider.dart';
 import '../../services/api_service.dart';
 
@@ -18,8 +17,6 @@ class FocusGuardianScreen extends ConsumerStatefulWidget {
 class _FocusGuardianScreenState extends ConsumerState<FocusGuardianScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _breathingAnim;
-  String _breathingText = 'Inhale (4s)';
-  int _breathingCount = 4;
 
   @override
   void initState() {

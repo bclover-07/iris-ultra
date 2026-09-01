@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
 import '../../theme/neubrutalist_widgets.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/animations.dart';
 import '../../models/study_plan.dart';
 
 class StudyPlanScreen extends ConsumerStatefulWidget {
